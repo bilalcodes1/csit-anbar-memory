@@ -25,6 +25,10 @@
     .year-card:hover .photo-shine { transform:translateX(130%); }
     .hero-photo { transition:transform .5s ease, box-shadow .5s ease; }
     .hero-photo:hover { transform:translateY(-8px) rotate(1deg) scale(1.03); box-shadow:0 30px 60px rgba(0,0,0,.35); }
+    .album-tile { transition:transform .25s ease, box-shadow .25s ease; }
+    .album-tile:hover { transform:translateY(-5px); box-shadow:0 18px 35px rgba(16,42,67,.18); }
+    .album-tile img { transition:transform .45s ease; }
+    .album-tile:hover img { transform:scale(1.08); }
     .modal-open { overflow:hidden; }
   </style>
 </head>
@@ -132,8 +136,32 @@
     }
     function openBatch(year) {
       const b = batches.find(item => item.year===year);
-      modalContent.innerHTML = `<p class="text-sm font-bold tracking-widest text-[#1f6f78]">${b.label}</p><h2 class="display mt-3 text-4xl font-bold text-[#102a43]">${b.title}</h2><img src="${b.image}" alt="${b.title}" class="mt-7 max-h-[28rem] w-full rounded-2xl object-cover shadow-lg"><div class="mt-7 rounded-2xl bg-gradient-to-br ${b.tone} p-8 text-white"><span class="display text-7xl font-bold text-[#e3c98d]">${b.year}</span><p class="mt-8 text-xl leading-loose">${b.quote}</p></div><div class="mt-6 grid gap-3 sm:grid-cols-2"><div class="rounded-2xl bg-white p-5"><i data-lucide="users" class="mb-3 h-5 w-5 text-[#1f6f78]"></i><strong class="block">أسماء الطلبة</strong><span class="text-sm text-slate-500">${b.students}</span></div><div class="rounded-2xl bg-white p-5"><i data-lucide="image" class="mb-3 h-5 w-5 text-[#c1984e]"></i><strong class="block">الصورة الجماعية</strong><span class="text-sm text-slate-500">الصورة المعروضة معاينة مؤقتة إلى حين إضافة صورة الدفعة.</span></div></div>`;
+      const albums = [
+        { id:'group', title:'صورة الدفعة', subtitle:'اللحظة التي جمعتنا', icon:'users', image:b.image, count:'صورة المعاينة' },
+        { id:'activities', title:'أنشطة وفعاليات', subtitle:'أيام صنعت الذكرى', icon:'party-popper', image:batches[(Number(b.year)-2022+1)%batches.length].image, count:'ألبوم مفتوح' },
+        { id:'campus', title:'في أروقة الكلية', subtitle:'أماكن تحفظ خطانا', icon:'building-2', image:batches[(Number(b.year)-2022+2)%batches.length].image, count:'ألبوم مفتوح' },
+        { id:'graduation', title:'لحظات التخرج', subtitle:'نهاية فصل وبداية طريق', icon:'graduation-cap', image:batches[(Number(b.year)-2022+3)%batches.length].image, count:'يضاف لاحقًا' }
+      ];
+      modalContent.innerHTML = `
+        <div class="overflow-hidden rounded-[1.7rem] bg-gradient-to-br ${b.tone} p-6 text-white md:p-8">
+          <p class="text-sm font-bold tracking-widest text-[#e3c98d]">${b.label} · DIGITAL YEARBOOK</p>
+          <div class="mt-3 flex flex-wrap items-end justify-between gap-4"><div><span class="display text-7xl font-bold text-[#e3c98d]">${b.year}</span><h2 class="display mt-1 text-3xl font-bold">${b.title}</h2></div><span class="rounded-full border border-white/20 px-4 py-2 text-sm text-white/75">أرشيف الدفعة</span></div>
+          <p class="mt-5 max-w-xl text-lg leading-loose text-white/75">${b.quote}</p>
+        </div>
+        <div class="mt-7 overflow-hidden rounded-3xl bg-white shadow-lg"><img src="${b.image}" alt="${b.title}" class="max-h-[28rem] w-full object-cover"><div class="flex flex-wrap items-center justify-between gap-3 p-5"><span class="text-sm text-slate-500">${b.students}</span><span class="rounded-full bg-[#eee8da] px-4 py-2 text-sm font-bold text-[#102a43]">كل صورة لها حكاية</span></div></div>
+        <div class="mt-8 flex items-end justify-between gap-4"><div><p class="text-sm font-bold tracking-widest text-[#1f6f78]">YEARBOOK SECTIONS</p><h3 class="display mt-2 text-3xl font-bold text-[#102a43]">استكشف فصول الدفعة</h3></div><span class="text-sm text-slate-500">4 أقسام</span></div>
+        <div class="mt-5 grid gap-4 sm:grid-cols-2">${albums.map(album => `<button data-album="${album.id}" class="album-tile group relative h-44 overflow-hidden rounded-2xl bg-[#102a43] text-right shadow-md"><img src="${album.image}" alt="${album.title}" class="h-full w-full object-cover opacity-70"><span class="absolute inset-0 bg-gradient-to-t from-[#102a43] via-[#102a43]/25 to-transparent"></span><span class="absolute inset-x-4 bottom-4 text-white"><i data-lucide="${album.icon}" class="mb-2 h-5 w-5 text-[#e3c98d]"></i><strong class="block text-lg">${album.title}</strong><small class="text-white/70">${album.subtitle} · ${album.count}</small></span></button>`).join('')}</div>
+        <div id="album-viewer" class="mt-7 hidden rounded-3xl border border-[#102a43]/10 bg-white p-5"><div class="flex items-center justify-between gap-4"><div><p class="text-xs font-bold tracking-widest text-[#1f6f78]">SELECTED ALBUM</p><h4 id="album-title" class="mt-1 text-xl font-bold text-[#102a43]"></h4></div><button id="album-close" class="rounded-full bg-[#eee8da] p-2 text-[#102a43]" aria-label="إغلاق الألبوم"><i data-lucide="x" class="h-4 w-4"></i></button></div><div id="album-images" class="mt-4 grid grid-cols-2 gap-3"></div></div>`;
       modal.classList.remove('hidden'); modal.classList.add('flex'); document.body.classList.add('modal-open'); lucide.createIcons();
+      const viewer = modalContent.querySelector('#album-viewer');
+      modalContent.querySelectorAll('[data-album]').forEach(tile => tile.addEventListener('click', () => {
+        const album = albums.find(item => item.id===tile.dataset.album);
+        modalContent.querySelector('#album-title').textContent = album.title;
+        modalContent.querySelector('#album-images').innerHTML = [album.image, b.image].map((image, index) => `<img src="${image}" alt="${album.title} ${index + 1}" class="h-40 w-full rounded-2xl object-cover">`).join('');
+        viewer.classList.remove('hidden');
+        viewer.scrollIntoView({ behavior:'smooth', block:'nearest' });
+      }));
+      modalContent.querySelector('#album-close').addEventListener('click', () => viewer.classList.add('hidden'));
     }
     function closeBatch() { modal.classList.add('hidden'); modal.classList.remove('flex'); document.body.classList.remove('modal-open'); }
     document.getElementById('modal-close').addEventListener('click', closeBatch);
