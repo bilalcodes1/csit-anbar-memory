@@ -1,62 +1,139 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#102b3e">
-  <meta name="description" content="الأرشيف الرقمي لدفعات كلية علوم الحاسوب وتكنولوجيا المعلومات في جامعة الأنبار">
-  <link rel="icon" href="/assets/brand/memory-icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/assets/public.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ذاكرة كلية علوم الحاسوب وتكنولوجيا المعلومات - جامعة الأنبار">
+  <link rel="icon" type="image/svg+xml" href="/assets/brand/memory-icon.svg">
+  <title>ذاكرة الكلية | علوم الحاسوب وتكنولوجيا المعلومات</title>
+  <link rel="stylesheet" href="/assets/archive-theme.css">
+  <script src="/assets/archive-icons.js" defer></script>
   <script src="/assets/public.js" defer></script>
-  <title>ذاكرة الكلية | جامعة الأنبار</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;600;700&display=swap');
+    :root { --ink:#102a43; --gold:#c8a96b; --cream:#f7f4ee; --teal:#1f6f78; }
+    html { scroll-behavior:smooth; }
+    body { font-family:'IBM Plex Sans Arabic',sans-serif; background:var(--cream); color:var(--ink); line-height:1.85; }
+    h1,h2,h3,h4,h5,h6,p,span,strong,small,button,a,label { line-height:1.85; }
+    .display { font-family:'Noto Kufi Arabic','IBM Plex Sans Arabic',sans-serif; letter-spacing:-.03em; line-height:1.75; }
+    .display br + span { display:inline-block; margin-top:.12em; }
+    .grain { background-image:radial-gradient(rgba(16,42,67,.08) .7px, transparent .7px); background-size:12px 12px; }
+    .hero-glow { background:radial-gradient(circle at 75% 15%,rgba(200,169,107,.26),transparent 30%),linear-gradient(135deg,#102a43 0%,#174b60 55%,#1f6f78 100%); }
+    .glass { background:rgba(255,255,255,.72); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,.7); }
+    .timeline-line { background:linear-gradient(to bottom,transparent,var(--gold) 8%,var(--gold) 92%,transparent); }
+    .year-card { transition:transform .35s ease, box-shadow .35s ease; }
+    .year-card:hover { transform:translateY(-8px); box-shadow:0 28px 60px rgba(16,42,67,.2); }
+    .photo-frame { transition:transform .5s ease; }
+    .year-card:hover .photo-frame { transform:scale(1.06); }
+    .photo-shine { background:linear-gradient(115deg,transparent 25%,rgba(255,255,255,.28) 45%,transparent 65%); transform:translateX(-130%); transition:transform .7s ease; }
+    .year-card:hover .photo-shine { transform:translateX(130%); }
+    .hero-photo { transition:transform .5s ease, box-shadow .5s ease; }
+    .hero-photo:hover { transform:translateY(-8px) rotate(1deg) scale(1.03); box-shadow:0 30px 60px rgba(0,0,0,.35); }
+    .memory-icon { filter:drop-shadow(0 10px 18px rgba(0,0,0,.22)); transition:transform .35s ease, filter .35s ease; }
+    .memory-icon:hover { transform:rotate(8deg) scale(1.08); filter:drop-shadow(0 14px 24px rgba(200,169,107,.35)); }
+    .album-tile { transition:transform .25s ease, box-shadow .25s ease; }
+    .album-tile:hover { transform:translateY(-5px); box-shadow:0 18px 35px rgba(16,42,67,.18); }
+    .album-tile img { transition:transform .45s ease; }
+    .album-tile:hover img { transform:scale(1.08); }
+    body:has(dialog[open]) { overflow:hidden; }
+    #batch-modal { border:0; background:transparent; color:var(--ink); }
+    #batch-modal::backdrop { background:#071521cc; backdrop-filter:blur(4px); }
+    :focus-visible { outline:2px solid #1f6f78; outline-offset:3px; }
+    [hidden] { display:none !important; }
+    #batches, #story { scroll-margin-top:5rem; }
+    @media (prefers-reduced-motion:reduce) {
+      html { scroll-behavior:auto; }
+      *, *::before, *::after { transition:none !important; }
+    }
+  </style>
 </head>
 <body>
-  <a class="skip" href="#archive">انتقل إلى الأرشيف</a>
-  <header class="masthead">
-    <div class="wrap bar">
-      <a class="brand" href="/"><img src="/assets/brand/memory-icon.svg" alt="" width="44" height="44"><span><strong>ذاكرة الكلية</strong><small>جامعة الأنبار</small></span></a>
-      <nav aria-label="التنقل الرئيسي"><a href="#archive">الأرشيف</a><a href="#about">عن المشروع</a></nav>
+  <header class="fixed top-0 inset-x-0 z-40 border-b border-white/10 bg-[#102a43]/90 text-white backdrop-blur-xl">
+    <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
+      <a href="#top" class="flex items-center gap-3">
+        <span class="grid h-11 w-11 place-items-center rounded-2xl bg-[#0b2033] p-1 shadow-lg"><img src="/assets/brand/memory-icon.svg" alt="أيقونة ذاكرة الكلية" class="memory-icon h-full w-full"></span>
+        <span><strong class="block text-lg">ذاكرة الكلية</strong><small class="text-xs text-white/65">كلية علوم الحاسوب وتكنولوجيا المعلومات · جامعة الأنبار</small></span>
+      </a>
+      <nav class="hidden items-center gap-7 text-sm text-white/75 md:flex">
+        <a class="transition hover:text-[#e3c98d]" href="#batches">الدفعات</a>
+        <a class="transition hover:text-[#e3c98d]" href="#story">حكايتنا</a>
+      </nav>
+      <a href="#batches" class="rounded-full border border-[#e3c98d]/50 px-4 py-2 text-sm text-[#f4dfaa] transition hover:bg-[#c8a96b] hover:text-[#102a43]">استكشف الأرشيف</a>
     </div>
   </header>
-  <main>
-    <section class="hero">
-      <div class="wrap hero-layout">
-        <div>
-          <p class="eyebrow">كلية علوم الحاسوب وتكنولوجيا المعلومات</p>
-          <h1>ذاكرة الكلية</h1>
-          <p class="hero-copy">أرشيف رقمي يوثّق دفعات الكلية، ويجمع صورها وألبوماتها والأسماء المعتمدة للنشر في مكان واحد.</p>
-          <a class="button gold" href="#archive">استكشف الدفعات <span aria-hidden="true">↓</span></a>
+
+  <main id="top">
+    <section class="hero-glow relative overflow-hidden px-5 pb-20 pt-36 text-white lg:px-8 lg:pb-28">
+      <div class="absolute -left-20 top-28 h-72 w-72 rounded-full border border-[#e3c98d]/25"></div>
+      <div class="absolute -left-8 top-44 h-44 w-44 rounded-full border border-[#e3c98d]/20"></div>
+      <div class="mx-auto grid max-w-7xl items-end gap-12 lg:grid-cols-[1.05fr_.95fr]">
+        <div class="max-w-3xl">
+          <p class="mb-5 flex items-center gap-3 text-sm font-semibold tracking-widest text-[#e3c98d]"><span class="h-px w-10 bg-[#e3c98d]"></span>أرشيف الذكريات · منذ أول دفعة</p>
+          <h1 class="display text-5xl font-bold leading-[1.2] md:text-7xl">كل دفعة<br><span class="text-[#e3c98d]">فصلٌ من الحكاية.</span></h1>
+          <p class="mt-7 max-w-xl text-lg leading-loose text-white/75 md:text-xl">مساحة تحفظ صور دفعات كلية علوم الحاسوب وتكنولوجيا المعلومات، وتوصل حكايات من سبقونا بمن سيكملون الطريق.</p>
+          <div class="mt-9 flex flex-wrap gap-3">
+            <a href="#batches" class="inline-flex items-center gap-2 rounded-full bg-[#c8a96b] px-6 py-3 font-bold text-[#102a43] shadow-xl shadow-black/15 transition hover:-translate-y-1 hover:bg-[#e3c98d]">ابدأ الرحلة <i data-lucide="arrow-left" class="h-5 w-5"></i></a>
+            <a href="#story" class="inline-flex items-center gap-2 rounded-full border border-white/25 px-6 py-3 font-semibold text-white/90 transition hover:bg-white/10">عن الفكرة <i data-lucide="sparkles" class="h-5 w-5"></i></a>
+          </div>
         </div>
-        <div class="hero-mark" aria-hidden="true"><img src="/assets/brand/memory-icon.svg" alt="" width="176" height="176"></div>
-      </div>
-    </section>
-    <section class="wrap archive" id="archive" aria-labelledby="archive-title">
-      <p class="eyebrow">الأرشيف الرقمي</p>
-      <h2 id="archive-title">الدفعات الموثّقة</h2>
-      <div class="controls">
-        <label class="search">البحث في الدفعات<input id="search" type="search" placeholder="ابحث بالسنة أو باسم الدفعة"></label>
-        <div class="filters" role="group" aria-label="حالة الدفعة">
-          <button type="button" data-filter="all" aria-pressed="true">الكل</button>
-          <button type="button" data-filter="graduated" aria-pressed="false">متخرجة</button>
-          <button type="button" data-filter="current" aria-pressed="false">حالية</button>
+        <div class="relative mx-auto h-[27rem] w-full max-w-md">
+          <div class="absolute right-2 top-8 h-52 w-40 rotate-6 overflow-hidden rounded-3xl border-4 border-white/80 bg-white p-2 shadow-2xl"><img src="/assets/batches/2023.jpg" alt="صورة من دفعة 2023" class="h-full w-full rounded-2xl object-cover"></div>
+          <div class="hero-photo absolute left-2 top-1 h-64 w-48 -rotate-6 overflow-hidden rounded-3xl border-4 border-white/80 bg-white p-2 shadow-2xl"><img src="/assets/batches/2026.jpg" alt="صورة من دفعة 2026" class="h-full w-full rounded-2xl object-cover"></div>
+          <div class="hero-photo absolute bottom-1 left-1/2 z-10 h-72 w-56 -translate-x-1/2 rotate-2 overflow-hidden rounded-3xl border-4 border-white/90 bg-white p-2 shadow-2xl"><img src="/assets/batches/2024.jpg" alt="صورة دفعة 2024" class="h-full w-full rounded-2xl object-cover"><span class="absolute bottom-5 right-5 rounded-full bg-[#102a43]/85 px-4 py-2 text-sm font-bold text-[#e3c98d]">من هنا بدأت الحكاية</span></div>
+          <div class="absolute bottom-8 right-0 h-40 w-32 -rotate-6 overflow-hidden rounded-3xl border-4 border-white/80 bg-white p-2 shadow-2xl"><img src="/assets/batches/2022.jpg" alt="صورة من دفعة 2022" class="h-full w-full rounded-2xl object-cover"></div>
         </div>
       </div>
-      <p id="status" role="status">جارٍ تحميل الدفعات…</p>
-      <button id="retry" type="button" class="button outline" hidden>إعادة المحاولة</button>
-      <div id="batches" class="cards"></div>
-      <noscript><p>يرجى تفعيل JavaScript لاستعراض الأرشيف.</p></noscript>
     </section>
-    <section class="about" id="about">
-      <div class="wrap about-layout">
-        <div><p class="eyebrow">عن المشروع</p><h2>ذاكرة تمتد بين الأجيال</h2><p>يوثّق المشروع الحياة الجامعية للطلبة من بداية الدراسة إلى التخرّج، ويتيح للكلية تنظيم الأرشيف ومراجعته قبل نشره.</p></div>
-        <dl><dt>إشراف ومتابعة</dt><dd>الدكتورة رقية اياد عبد الجبار</dd><dt>فكرة وتصميم</dt><dd>بلال زامل احمد وملاك مازن يوسف</dd></dl>
+
+    <section class="relative -mt-8 px-5 lg:px-8">
+      <div class="mx-auto grid max-w-7xl grid-cols-2 overflow-hidden rounded-3xl bg-white shadow-xl shadow-[#102a43]/10 md:grid-cols-4">
+        <div class="border-b border-l border-[#102a43]/10 p-6 text-center md:border-b-0"><strong class="display block text-3xl text-[#102a43]" id="batch-count">–</strong><span class="text-sm text-slate-500">دفعات موثقة</span></div>
+        <div class="border-b border-[#102a43]/10 p-6 text-center md:border-b-0 md:border-l"><strong class="display block text-3xl text-[#1f6f78]">4</strong><span class="text-sm text-slate-500">مراحل دراسية</span></div>
+        <div class="border-l border-[#102a43]/10 p-6 text-center"><strong class="display block text-3xl text-[#c1984e]">∞</strong><span class="text-sm text-slate-500">ذكرى لا تنتهي</span></div>
+        <div class="p-6 text-center"><strong class="display block text-3xl text-[#102a43]">1</strong><span class="text-sm text-slate-500">حكاية تجمعنا</span></div>
       </div>
     </section>
+
+    <section id="batches" class="px-5 py-24 lg:px-8">
+      <div class="mx-auto max-w-7xl">
+        <div class="mb-12 flex flex-col justify-between gap-5 md:flex-row md:items-end">
+          <div><p class="mb-3 text-sm font-bold tracking-widest text-[#1f6f78]">الأرشيف الزمني</p><h2 class="display text-4xl font-bold text-[#102a43] md:text-5xl">دفعاتنا، سنة بعد سنة</h2></div>
+          <div class="flex gap-2 rounded-full bg-white p-1 shadow-sm" id="filters">
+            <button data-filter="all" class="filter-btn rounded-full bg-[#102a43] px-4 py-2 text-sm font-semibold text-white">الكل</button>
+            <button data-filter="graduated" class="filter-btn rounded-full px-4 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100">متخرجون</button>
+            <button data-filter="current" class="filter-btn rounded-full px-4 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100">حاليون</button>
+          </div>
+        </div>
+        <label class="mb-5 block max-w-sm text-sm font-semibold text-[#102a43]">البحث في الدفعات
+          <input id="batch-search" type="search" placeholder="ابحث بالسنة أو باسم الدفعة" class="mt-2 block w-full rounded-2xl border border-[#102a43]/20 bg-white px-4 py-2">
+        </label>
+        <p id="archive-status" class="mb-4 text-sm text-slate-600" role="status">جارٍ تحميل الدفعات…</p>
+        <button id="retry" type="button" class="mb-4 rounded-full bg-[#eee8da] px-4 py-2 text-sm font-bold" hidden>إعادة المحاولة</button>
+        <div class="relative">
+          <div class="timeline-line absolute right-4 top-4 hidden h-[calc(100%-2rem)] w-px md:block"></div>
+          <div class="grid gap-6 md:mr-12 md:grid-cols-2" id="batch-grid"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="story" class="bg-white px-5 py-24 lg:px-8">
+      <div class="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-2">
+        <div><p class="mb-3 text-sm font-bold tracking-widest text-[#1f6f78]">عن المشروع</p><h2 class="display text-4xl font-bold leading-tight text-[#102a43] md:text-5xl">الصورة تحفظ لحظة،<br><span class="text-[#c1984e]">والذكرى تحفظ عمرًا.</span></h2><p class="mt-6 max-w-xl text-lg leading-loose text-slate-600">«ذاكرة الكلية» أرشيف رقمي يوثق دفعات كلية علوم الحاسوب وتكنولوجيا المعلومات – جامعة الأنبار، ويحفظ صورهم وحكاياتهم من أول مرحلة دراسية إلى لحظة التخرج، لتبقى الذاكرة متاحة للأجيال القادمة.</p><div class="mt-8 grid gap-4 sm:grid-cols-2"><div class="glass rounded-2xl p-5"><i data-lucide="heart-handshake" class="mb-3 h-6 w-6 text-[#1f6f78]"></i><strong class="block">إشراف ومتابعة</strong><span class="text-sm text-slate-500">الدكتورة رقية اياد عبد الجبار</span></div><div class="glass rounded-2xl p-5"><i data-lucide="code-2" class="mb-3 h-6 w-6 text-[#c1984e]"></i><strong class="block">فكرة وتصميم</strong><span class="text-sm text-slate-500">بلال زامل احمد وملاك مازن يوسف</span></div></div></div>
+        <div class="relative"><div class="absolute -inset-4 rounded-[2rem] bg-[#e7dfd0]"></div><div class="relative rounded-[1.5rem] bg-[#102a43] p-8 text-white shadow-2xl"><i data-lucide="quote" class="h-10 w-10 text-[#e3c98d]"></i><p class="display mt-8 text-3xl leading-relaxed">لسنا أرقامًا في قوائم، نحن حكايات تركت أثرًا في هذا المكان.</p><div class="mt-10 flex items-center justify-between border-t border-white/15 pt-5 text-sm text-white/60"><span>ذاكرة الكلية</span><span>كلية علوم الحاسوب · 2026</span></div></div></div>
+      </div>
+    </section>
+
   </main>
-  <footer><div class="wrap bar"><span>ذاكرة الكلية · جامعة الأنبار</span><a href="/privacy.html">الخصوصية والنشر</a></div></footer>
-  <dialog id="details" aria-labelledby="detail-title">
-    <div class="dialog-bar"><strong>أرشيف الدفعة</strong><form method="dialog"><button class="button outline" autofocus>إغلاق</button></form></div>
-    <div id="detail-content" class="dialog-content"></div>
+
+  <footer class="bg-[#0b2033] px-5 py-8 text-white/60 lg:px-8">
+    <div class="mx-auto flex max-w-7xl flex-col justify-between gap-3 text-sm md:flex-row"><span>© 2026 ذاكرة كلية علوم الحاسوب وتكنولوجيا المعلومات</span><span>إشراف ومتابعة: الدكتورة رقية اياد عبد الجبار · فكرة وتصميم: بلال زامل احمد وملاك مازن يوسف</span><a class="underline hover:text-white" href="/privacy">الخصوصية والنشر</a></div>
+  </footer>
+
+  <dialog id="batch-modal" aria-labelledby="detail-title" class="m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto rounded-3xl p-0 shadow-2xl">
+    <div class="relative rounded-3xl bg-[#f7f4ee] p-6 md:p-9">
+      <form method="dialog"><button id="modal-close" autofocus aria-label="إغلاق" class="absolute left-5 top-5 rounded-full bg-[#102a43] p-2 text-white transition hover:bg-[#1f6f78]"><i data-lucide="x" class="h-5 w-5" aria-hidden="true">×</i></button></form>
+      <div id="modal-content" class="pt-8"></div>
+    </div>
   </dialog>
 </body>
 </html>

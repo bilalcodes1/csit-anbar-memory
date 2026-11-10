@@ -37,7 +37,7 @@ const home = await request('/');
 assert.match(await home.text(), /ذاكرة الكلية/);
 await request('/privacy');
 const deepLink = await request('/batch/2026');
-assert.match(await deepLink.text(), /id="details"/);
+assert.match(await deepLink.text(), /id="batch-modal"/);
 await request('/admin');
 await request('/api/admin/overview', { status: 401 });
 await request('/api/batches/not-a-year', { status: 404 });
