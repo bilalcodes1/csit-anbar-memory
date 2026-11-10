@@ -9,7 +9,7 @@ export async function onRequestGet({ env }) {
     env.DB.prepare(`
       SELECT albums.id, albums.batch_id, albums.slug, albums.title, albums.subtitle
       FROM albums JOIN batches ON batches.id = albums.batch_id
-      WHERE albums.published = 1 AND batches.published = 1 ORDER BY albums.sort_order, albums.id
+      WHERE albums.published = 1 AND batches.published = 1 AND albums.is_activity = 0 ORDER BY albums.sort_order, albums.id
     `)
   ]);
   const albumsByBatch = new Map();

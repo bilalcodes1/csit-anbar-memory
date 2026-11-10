@@ -121,10 +121,13 @@ function showDetail(b) {
   modalContent.querySelectorAll('[data-album]').forEach(tile => tile.addEventListener('click', () => {
     const album = albums[Number(tile.dataset.album)];
     modalContent.querySelector('#album-title').textContent = album.title;
-    modalContent.querySelector('#album-images').innerHTML = album.photos.length ? album.photos.map(entry => `
-      <figure><a href="${escapeHtml(entry.url)}" target="_blank" rel="noopener">${photo(entry.url, entry.alt_text || album.title, 'h-40 w-full rounded-2xl object-cover')}</a>
+    modalContent.querySelector('#album-images').innerHTML = album.photos.length ? album.photos.map((entry, index) => `
+      <figure>${thumbnail(entry, index, album.title)}
         ${entry.caption ? `<figcaption class="mt-2 text-sm">${escapeHtml(entry.caption)}</figcaption>` : ''}
       </figure>`).join('') : '<p class="col-span-2 text-sm text-slate-600">لا توجد صور منشورة في هذا الألبوم.</p>';
+    modalContent.querySelectorAll('#album-images [data-photo]').forEach(button => {
+      button.addEventListener('click', () => openPhoto(album, Number(button.dataset.photo)));
+    });
     viewer.classList.remove('hidden');
     viewer.scrollIntoView({ block: 'nearest' });
   }));
@@ -210,3 +213,147 @@ filters.forEach(button => {
 icons();
 load();
 route();
+
+const photoModal = document.getElementById('photo-modal');
+const fullPhoto = document.getElementById('full-photo');
+const photoTitle = document.getElementById('photo-title');
+const photoCaption = document.getElementById('photo-caption');
+const photoCount = document.getElementById('photo-count');
+const prevPhoto = document.getElementById('photo-prev');
+const nextPhoto = document.getElementById('photo-next');
+let photoAlbum;
+let photoIndex = 0;
+
+function thumbnail(entry, index, title) {
+  const alt = entry.alt_text || title;
+  return `<button type="button" class="photo-thumb" data-photo="${index}" aria-label="عرض ${escapeHtml(alt)}">${photo(entry.url, '', '')}</button>`;
+}
+
+function displayPhoto() {
+  const entry = photoAlbum.photos[photoIndex];
+  photoTitle.textContent = photoAlbum.title;
+  fullPhoto.alt = entry.alt_text || photoAlbum.title;
+  fullPhoto.src = entry.url;
+  photoCaption.textContent = entry.caption || '';
+  photoCount.textContent = `${photoIndex + 1} / ${photoAlbum.photos.length}`;
+  prevPhoto.disabled = nextPhoto.disabled = photoAlbum.photos.length < 2;
+}
+
+function openPhoto(album, index) {
+  photoAlbum = album;
+  photoIndex = index;
+  displayPhoto();
+  if (!photoModal.open) photoModal.showModal();
+}
+
+function stepPhoto(delta) {
+  if (!photoAlbum || photoAlbum.photos.length < 2) return;
+  photoIndex = (photoIndex + delta + photoAlbum.photos.length) % photoAlbum.photos.length;
+  displayPhoto();
+}
+
+prevPhoto.addEventListener('click', () => stepPhoto(-1));
+nextPhoto.addEventListener('click', () => stepPhoto(1));
+photoModal.addEventListener('keydown', event => {
+  if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+  event.preventDefault();
+  stepPhoto(event.key === 'ArrowLeft' ? 1 : -1);
+});
+photoModal.addEventListener('click', event => {
+  if (event.target === photoModal) photoModal.close();
+});
+let swipeStart;
+const stage = photoModal.querySelector('.photo-stage');
+stage.addEventListener('touchstart', event => {
+  const touch = event.touches.length === 1 ? event.touches[0] : null;
+  swipeStart = touch && { x: touch.clientX, y: touch.clientY };
+}, { passive: true });
+stage.addEventListener('touchend', event => {
+  const touch = event.changedTouches[0];
+  if (!swipeStart || !touch) return;
+  const dx = touch.clientX - swipeStart.x;
+  const dy = touch.clientY - swipeStart.y;
+  if (Math.abs(dx) >= 45 && Math.abs(dx) > Math.abs(dy) * 1.5) stepPhoto(dx > 0 ? 1 : -1);
+  swipeStart = null;
+}, { passive: true });
+
+const activities = document.getElementById('activity-albums');
+const activityStatus = document.getElementById('activity-status');
+const activityViewer = document.getElementById('activity-viewer');
+const activityTitle = document.getElementById('activity-title');
+const activityPhotos = document.getElementById('activity-photos');
+const activityMore = document.getElementById('activity-more');
+const activityRetry = document.getElementById('activity-retry');
+const photosPerPage = 12;
+let activityAlbums = [];
+let selectedActivity;
+let activityTrigger;
+let displayedPhotos = 0;
+
+function showMorePhotos(moveFocus = false) {
+  const end = Math.min(displayedPhotos + photosPerPage, selectedActivity.photos.length);
+  const newPhotos = selectedActivity.photos.slice(displayedPhotos, end);
+  activityPhotos.insertAdjacentHTML('beforeend', newPhotos.map((entry, offset) =>
+    thumbnail(entry, displayedPhotos + offset, selectedActivity.title)
+  ).join(''));
+  if (moveFocus && newPhotos.length) activityPhotos.children[displayedPhotos].focus();
+  displayedPhotos = end;
+  activityMore.hidden = displayedPhotos >= selectedActivity.photos.length;
+}
+
+function showActivity(album, trigger) {
+  activityTrigger?.setAttribute('aria-expanded', 'false');
+  activityTrigger = trigger;
+  activityTrigger.setAttribute('aria-expanded', 'true');
+  selectedActivity = album;
+  displayedPhotos = 0;
+  activityTitle.textContent = album.title;
+  activityPhotos.innerHTML = album.photos.length ? '' : '<p>لا توجد صور منشورة في هذا الألبوم.</p>';
+  activityViewer.hidden = false;
+  showMorePhotos();
+  activityTitle.focus({ preventScroll: true });
+  activityViewer.scrollIntoView({ block: 'nearest' });
+}
+
+async function loadActivities() {
+  activityRetry.hidden = true;
+  activityStatus.textContent = 'جارٍ تحميل النشاطات…';
+  try {
+    const data = await fetchJson('/api/activities');
+    if (!Array.isArray(data)) throw new Error('Invalid activities response');
+    activityAlbums = data.map(album => ({
+      ...album,
+      photos: album.photos.map(entry => ({ ...entry, url: mediaUrl(entry.url) })).filter(entry => entry.url)
+    }));
+    activities.innerHTML = activityAlbums.map((album, index) => `
+      <button type="button" class="activity-card" data-activity="${index}" aria-expanded="false" aria-controls="activity-viewer">
+        ${photo(album.photos[0]?.url, '', '')}
+        <span class="activity-card-copy">
+          <small>${escapeHtml(album.subtitle)} · ${album.photos.length} صورة</small>
+          <strong class="display">${escapeHtml(album.title)}</strong>
+          <span>افتح الألبوم</span>
+        </span>
+      </button>`).join('');
+    activityStatus.textContent = activityAlbums.length ? '' : 'لا توجد نشاطات منشورة حاليًا.';
+  } catch {
+    activityStatus.textContent = 'تعذّر تحميل النشاطات الآن.';
+    activityRetry.hidden = false;
+  }
+}
+
+activities.addEventListener('click', event => {
+  const trigger = event.target.closest('[data-activity]');
+  if (trigger) showActivity(activityAlbums[Number(trigger.dataset.activity)], trigger);
+});
+activityPhotos.addEventListener('click', event => {
+  const trigger = event.target.closest('[data-photo]');
+  if (trigger) openPhoto(selectedActivity, Number(trigger.dataset.photo));
+});
+activityMore.addEventListener('click', () => showMorePhotos(true));
+activityRetry.addEventListener('click', loadActivities);
+document.getElementById('activity-close').addEventListener('click', () => {
+  activityViewer.hidden = true;
+  activityTrigger?.setAttribute('aria-expanded', 'false');
+  activityTrigger?.focus();
+});
+loadActivities();

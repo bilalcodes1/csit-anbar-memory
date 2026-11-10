@@ -15,12 +15,12 @@ export async function onRequestGet({ env, params }) {
   const [albums, photos, students] = await env.DB.batch([
     env.DB.prepare(`
       SELECT id, slug, title, subtitle FROM albums
-      WHERE batch_id = ? AND published = 1 ORDER BY sort_order, id
+      WHERE batch_id = ? AND published = 1 AND is_activity = 0 ORDER BY sort_order, id
     `).bind(batch.id),
     env.DB.prepare(`
       SELECT photos.id, photos.album_id, photos.object_key, photos.alt_text, photos.caption
       FROM photos JOIN albums ON albums.id = photos.album_id
-      WHERE albums.batch_id = ? AND albums.published = 1 AND photos.published = 1
+      WHERE albums.batch_id = ? AND albums.published = 1 AND albums.is_activity = 0 AND photos.published = 1
       ORDER BY photos.sort_order, photos.id
     `).bind(batch.id),
     env.DB.prepare(`

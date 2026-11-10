@@ -95,6 +95,23 @@ await request('/api/admin/upload', { method: 'POST', cookie: admin, body: upload
 await request('/api/admin/upload', { method: 'POST', cookie: admin, body: uploadForm(), status: 201 });
 await request('/api/admin/upload', { method: 'POST', cookie: admin, body: uploadForm() });
 await request('/media/' + key, { status: 404 });
+const activityFields = { id: album.id, title: 'ألبوم اختبار', published: true };
+await request('/api/admin/albums', {
+  method: 'PATCH', cookie: admin, body: { ...activityFields, is_activity: true }
+});
+const activities = await (await request('/api/activities')).json();
+assert.ok(activities.some(item => item.id === album.id && item.photos.some(photo => photo.url === '/media/' + key)));
+await request('/media/' + key);
+await request('/api/batches/' + year, { status: 404 });
+await request('/api/admin/albums', {
+  method: 'PATCH', cookie: admin, body: { ...activityFields, published: false, is_activity: true }
+});
+assert.ok(!(await (await request('/api/activities')).json()).some(item => item.id === album.id));
+await request('/media/' + key, { status: 404 });
+await request('/api/admin/albums', {
+  method: 'PATCH', cookie: admin, body: { ...activityFields, is_activity: false }
+});
+
 await request('/media/' + key, { cookie: admin });
 await request('/api/admin/batches/' + batch.id, {
   method: 'PATCH', cookie: admin, body: { ...batchData, cover_key: key, published: true }

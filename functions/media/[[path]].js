@@ -15,7 +15,7 @@ export async function onRequestGet({ env, request, params }) {
     SELECT 1 FROM photos
     JOIN albums ON albums.id = photos.album_id
     JOIN batches ON batches.id = albums.batch_id
-    WHERE photos.object_key = ? AND photos.published = 1 AND albums.published = 1 AND batches.published = 1
+    WHERE photos.object_key = ? AND photos.published = 1 AND albums.published = 1 AND (batches.published = 1 OR albums.is_activity = 1)
     LIMIT 1
   `).bind(key, key).first();
   if (!published && !await getSession(request, env)) return new Response(null, { status: 404, headers });

@@ -7,6 +7,7 @@
   <link rel="icon" type="image/svg+xml" href="/assets/brand/memory-icon.svg">
   <title>ذاكرة الكلية | علوم الحاسوب وتكنولوجيا المعلومات</title>
   <link rel="stylesheet" href="/assets/archive-theme.css">
+  <link rel="stylesheet" href="/assets/gallery.css">
   <script src="/assets/archive-icons.js" defer></script>
   <script src="/assets/public.js" defer></script>
   <style>
@@ -56,6 +57,7 @@
       </a>
       <nav class="hidden items-center gap-7 text-sm text-white/75 md:flex">
         <a class="transition hover:text-[#e3c98d]" href="#batches">الدفعات</a>
+        <a class="transition hover:text-[#e3c98d]" href="#activities">النشاطات</a>
         <a class="transition hover:text-[#e3c98d]" href="#story">حكايتنا</a>
       </nav>
       <a href="#batches" class="rounded-full border border-[#e3c98d]/50 px-4 py-2 text-sm text-[#f4dfaa] transition hover:bg-[#c8a96b] hover:text-[#102a43]">استكشف الأرشيف</a>
@@ -67,16 +69,17 @@
       <div class="absolute -left-20 top-28 h-72 w-72 rounded-full border border-[#e3c98d]/25"></div>
       <div class="absolute -left-8 top-44 h-44 w-44 rounded-full border border-[#e3c98d]/20"></div>
       <div class="mx-auto grid max-w-7xl items-end gap-12 lg:grid-cols-[1.05fr_.95fr]">
-        <div class="max-w-3xl">
+        <div class="hero-intro max-w-3xl">
           <p class="mb-5 flex items-center gap-3 text-sm font-semibold tracking-widest text-[#e3c98d]"><span class="h-px w-10 bg-[#e3c98d]"></span>أرشيف الذكريات · منذ أول دفعة</p>
           <h1 class="display text-5xl font-bold leading-[1.2] md:text-7xl">كل دفعة<br><span class="text-[#e3c98d]">فصلٌ من الحكاية.</span></h1>
           <p class="mt-7 max-w-xl text-lg leading-loose text-white/75 md:text-xl">مساحة تحفظ صور دفعات كلية علوم الحاسوب وتكنولوجيا المعلومات، وتوصل حكايات من سبقونا بمن سيكملون الطريق.</p>
           <div class="mt-9 flex flex-wrap gap-3">
             <a href="#batches" class="inline-flex items-center gap-2 rounded-full bg-[#c8a96b] px-6 py-3 font-bold text-[#102a43] shadow-xl shadow-black/15 transition hover:-translate-y-1 hover:bg-[#e3c98d]">ابدأ الرحلة <i data-lucide="arrow-left" class="h-5 w-5"></i></a>
             <a href="#story" class="inline-flex items-center gap-2 rounded-full border border-white/25 px-6 py-3 font-semibold text-white/90 transition hover:bg-white/10">عن الفكرة <i data-lucide="sparkles" class="h-5 w-5"></i></a>
+            <a href="#activities" class="hero-activity-link">نشاطات الكلية <span aria-hidden="true">↓</span></a>
           </div>
         </div>
-        <div class="relative mx-auto h-[27rem] w-full max-w-md">
+        <div class="hero-collage relative mx-auto h-[27rem] w-full max-w-md">
           <div class="absolute right-2 top-8 h-52 w-40 rotate-6 overflow-hidden rounded-3xl border-4 border-white/80 bg-white p-2 shadow-2xl"><img src="/assets/batches/2023.jpg" alt="صورة من دفعة 2023" class="h-full w-full rounded-2xl object-cover"></div>
           <div class="hero-photo absolute left-2 top-1 h-64 w-48 -rotate-6 overflow-hidden rounded-3xl border-4 border-white/80 bg-white p-2 shadow-2xl"><img src="/assets/batches/2026.jpg" alt="صورة من دفعة 2026" class="h-full w-full rounded-2xl object-cover"></div>
           <div class="hero-photo absolute bottom-1 left-1/2 z-10 h-72 w-56 -translate-x-1/2 rotate-2 overflow-hidden rounded-3xl border-4 border-white/90 bg-white p-2 shadow-2xl"><img src="/assets/batches/2024.jpg" alt="صورة دفعة 2024" class="h-full w-full rounded-2xl object-cover"><span class="absolute bottom-5 right-5 rounded-full bg-[#102a43]/85 px-4 py-2 text-sm font-bold text-[#e3c98d]">من هنا بدأت الحكاية</span></div>
@@ -116,6 +119,25 @@
       </div>
     </section>
 
+    <section id="activities" class="activities-section" aria-labelledby="activities-heading">
+      <div class="activities-wrap">
+        <p class="activities-eyebrow">من حياة الكلية</p>
+        <h2 id="activities-heading" class="display">نشاطات الكلية</h2>
+        <p class="activities-intro">لحظات من العمل الطلابي والمبادرات التي تركت أثرًا في الكلية.</p>
+        <p id="activity-status" role="status">جارٍ تحميل النشاطات…</p>
+        <button id="activity-retry" type="button" class="archive-control" hidden>إعادة المحاولة</button>
+        <div id="activity-albums" class="activity-albums"></div>
+        <section id="activity-viewer" class="activity-viewer" aria-labelledby="activity-title" hidden>
+          <div class="activity-viewer-heading">
+            <h3 id="activity-title" class="display" tabindex="-1"></h3>
+            <button id="activity-close" type="button" class="archive-control">إغلاق الألبوم</button>
+          </div>
+          <div id="activity-photos" class="activity-photos"></div>
+          <button id="activity-more" type="button" class="archive-control" hidden>عرض صور أكثر</button>
+        </section>
+      </div>
+    </section>
+
     <section id="story" class="bg-white px-5 py-24 lg:px-8">
       <div class="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-2">
         <div><p class="mb-3 text-sm font-bold tracking-widest text-[#1f6f78]">عن المشروع</p><h2 class="display text-4xl font-bold leading-tight text-[#102a43] md:text-5xl">الصورة تحفظ لحظة،<br><span class="text-[#c1984e]">والذكرى تحفظ عمرًا.</span></h2><p class="mt-6 max-w-xl text-lg leading-loose text-slate-600">«ذاكرة الكلية» أرشيف رقمي يوثق دفعات كلية علوم الحاسوب وتكنولوجيا المعلومات – جامعة الأنبار، ويحفظ صورهم وحكاياتهم من أول مرحلة دراسية إلى لحظة التخرج، لتبقى الذاكرة متاحة للأجيال القادمة.</p><div class="mt-8 grid gap-4 sm:grid-cols-2"><div class="glass rounded-2xl p-5"><i data-lucide="heart-handshake" class="mb-3 h-6 w-6 text-[#1f6f78]"></i><strong class="block">إشراف ومتابعة</strong><span class="text-sm text-slate-500">الدكتورة رقية اياد عبد الجبار</span></div><div class="glass rounded-2xl p-5"><i data-lucide="code-2" class="mb-3 h-6 w-6 text-[#c1984e]"></i><strong class="block">فكرة وتصميم</strong><span class="text-sm text-slate-500">بلال زامل احمد وملاك مازن يوسف</span></div></div></div>
@@ -133,6 +155,21 @@
     <div class="relative rounded-3xl bg-[#f7f4ee] p-6 md:p-9">
       <form method="dialog"><button id="modal-close" autofocus aria-label="إغلاق" class="absolute left-5 top-5 rounded-full bg-[#102a43] p-2 text-white transition hover:bg-[#1f6f78]"><i data-lucide="x" class="h-5 w-5" aria-hidden="true">×</i></button></form>
       <div id="modal-content" class="pt-8"></div>
+    </div>
+  </dialog>
+  <dialog id="photo-modal" aria-labelledby="photo-title">
+    <div class="photo-toolbar">
+      <h2 id="photo-title" class="display"></h2>
+      <form method="dialog"><button class="archive-control" autofocus>إغلاق الصورة</button></form>
+    </div>
+    <figure>
+      <div class="photo-stage"><img id="full-photo" alt=""></div>
+      <figcaption id="photo-caption"></figcaption>
+    </figure>
+    <div class="photo-navigation">
+      <button id="photo-prev" type="button" class="archive-control">السابقة</button>
+      <span id="photo-count" role="status"></span>
+      <button id="photo-next" type="button" class="archive-control">التالية</button>
     </div>
   </dialog>
 </body>
