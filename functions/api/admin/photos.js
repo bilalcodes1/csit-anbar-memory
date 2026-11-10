@@ -35,7 +35,10 @@ export async function onRequestDelete({ request, env }) {
   const photo = await env.DB.prepare("SELECT object_key FROM photos WHERE id = ?").bind(id).first();
   if (!photo) return Response.json({ error: "الصورة غير موجودة" }, { status: 404 });
   if (env.IMAGES) await env.IMAGES.delete(photo.object_key);
-  await env.DB.prepare("DELETE FROM photos WHERE id = ?").bind(id).run();
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM photos WHERE object_key = ?").bind(photo.object_key),
+    env.DB.prepare("UPDATE batches SET cover_key = NULL WHERE cover_key = ?").bind(photo.object_key)
+  ]);
   await audit(env, auth.session, "delete", "photo", id, { key: photo.object_key });
   return Response.json({ ok: true, id, key: photo.object_key });
 }

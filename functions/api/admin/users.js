@@ -29,7 +29,8 @@ export async function onRequestPost({ request, env }) {
 export async function onRequestPatch({ request, env }) {
   const auth = await requireUser(request, env, true);
   if (auth.response) return auth.response;
-  const payload = await request.json();
+  let payload;
+  try { payload = await request.json(); } catch { return Response.json({ error: "بيانات غير صالحة" }, { status: 400 }); }
   const id = Number(payload.id);
   if (!Number.isInteger(id) || id === auth.session.user_id) return Response.json({ error: "لا يمكن تعديل هذا الحساب" }, { status: 422 });
   const existing = await env.DB.prepare("SELECT id, name, role, active FROM users WHERE id = ?").bind(id).first();
@@ -42,13 +43,17 @@ export async function onRequestPatch({ request, env }) {
     return Response.json({ error: "كلمة المرور يجب ألا تقل عن 12 رمزًا" }, { status: 422 });
   }
   if (payload.password !== undefined && String(payload.password).length > 0) {
-    await env.DB.prepare("UPDATE users SET name = ?, password_hash = ?, active = ?, role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
-      .bind(name, await hashPassword(String(payload.password)), active, role, id).run();
+    await env.DB.batch([
+      env.DB.prepare("UPDATE users SET name = ?, password_hash = ?, active = ?, role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+        .bind(name, await hashPassword(String(payload.password)), active, role, id),
+      env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(id),
+      env.DB.prepare("UPDATE device_tokens SET revoked = 1 WHERE user_id = ?").bind(id)
+    ]);
   } else {
     await env.DB.prepare("UPDATE users SET name = ?, active = ?, role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
       .bind(name, active, role, id).run();
   }
-  await audit(env, auth.session, "update", "user", id, payload);
+  await audit(env, auth.session, "update", "user", id, { name, role, active, password_changed: Boolean(payload.password) });
   return Response.json({ ok: true });
 }
 

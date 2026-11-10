@@ -1,7 +1,7 @@
 import { requireUser } from "./_guard.js";
 
 const MAX_LIMIT = 1000;
-const limitOf = (value, fallback = 50) => Math.min(MAX_LIMIT, Math.max(1, Number.isInteger(Number(value)) ? Number(value) : fallback));
+const limitOf = (value, fallback = 50) => Math.min(MAX_LIMIT, Math.max(1, value && Number.isInteger(Number(value)) ? Number(value) : fallback));
 
 async function mediaPage(env, url) {
   if (!env.IMAGES) return { objects: [], pagination: { limit: 0, cursor: null, truncated: false } };
