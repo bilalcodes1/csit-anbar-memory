@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="ذاكرة كلية علوم الحاسوب وتكنولوجيا المعلومات - جامعة الأنبار">
+  <link rel="icon" type="image/svg+xml" href="assets/brand/memory-icon.svg">
   <title>ذاكرة الكلية | علوم الحاسوب وتكنولوجيا المعلومات</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -25,6 +26,8 @@
     .year-card:hover .photo-shine { transform:translateX(130%); }
     .hero-photo { transition:transform .5s ease, box-shadow .5s ease; }
     .hero-photo:hover { transform:translateY(-8px) rotate(1deg) scale(1.03); box-shadow:0 30px 60px rgba(0,0,0,.35); }
+    .memory-icon { filter:drop-shadow(0 10px 18px rgba(0,0,0,.22)); transition:transform .35s ease, filter .35s ease; }
+    .memory-icon:hover { transform:rotate(8deg) scale(1.08); filter:drop-shadow(0 14px 24px rgba(200,169,107,.35)); }
     .album-tile { transition:transform .25s ease, box-shadow .25s ease; }
     .album-tile:hover { transform:translateY(-5px); box-shadow:0 18px 35px rgba(16,42,67,.18); }
     .album-tile img { transition:transform .45s ease; }
@@ -36,7 +39,7 @@
   <header class="fixed top-0 inset-x-0 z-40 border-b border-white/10 bg-[#102a43]/90 text-white backdrop-blur-xl">
     <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
       <a href="#top" class="flex items-center gap-3">
-        <span class="grid h-11 w-11 place-items-center rounded-2xl bg-[#c8a96b] text-[#102a43] shadow-lg"><i data-lucide="book-open" class="h-5 w-5"></i></span>
+        <span class="grid h-11 w-11 place-items-center rounded-2xl bg-[#0b2033] p-1 shadow-lg"><img src="assets/brand/memory-icon.svg" alt="أيقونة ذاكرة الكلية" class="memory-icon h-full w-full"></span>
         <span><strong class="block text-lg">ذاكرة الكلية</strong><small class="text-xs text-white/65">CSIT · University of Anbar</small></span>
       </a>
       <nav class="hidden items-center gap-7 text-sm text-white/75 md:flex">

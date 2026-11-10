@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">أيقونة ذاكرة الكلية</title>
+  <desc id="desc">بتلات صور ملونة تدور حول مركز مضيء</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#102a43"/>
+      <stop offset="1" stop-color="#071521"/>
+    </linearGradient>
+    <linearGradient id="pink" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#ff7096"/>
+      <stop offset="1" stop-color="#c51f68"/>
+    </linearGradient>
+    <linearGradient id="orange" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#ffd96a"/>
+      <stop offset="1" stop-color="#ef8c20"/>
+    </linearGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#a8f3ff"/>
+      <stop offset="1" stop-color="#208db7"/>
+    </linearGradient>
+    <linearGradient id="violet" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#b99bff"/>
+      <stop offset="1" stop-color="#5a2aa1"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="18" stdDeviation="16" flood-color="#020911" flood-opacity=".5"/>
+    </filter>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="12"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="118" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="118" fill="#e3c98d" opacity=".18" filter="url(#glow)"/>
+  <g filter="url(#shadow)" stroke="#fff" stroke-opacity=".72" stroke-width="8">
+    <g transform="rotate(-45 256 256)">
+      <rect x="218" y="52" width="76" height="178" rx="34" fill="url(#pink)"/>
+      <path d="M239 78h34v15h-19v27h-15z" fill="#fff" stroke="none" opacity=".9"/>
+    </g>
+    <g transform="rotate(15 256 256)">
+      <rect x="218" y="52" width="76" height="178" rx="34" fill="url(#orange)"/>
+      <path d="M239 78h34v15h-19v27h-15z" fill="#fff" stroke="none" opacity=".9"/>
+    </g>
+    <g transform="rotate(75 256 256)">
+      <rect x="218" y="52" width="76" height="178" rx="34" fill="#83c936"/>
+      <path d="M239 78h34v15h-19v27h-15z" fill="#fff" stroke="none" opacity=".9"/>
+    </g>
+    <g transform="rotate(135 256 256)">
+      <rect x="218" y="52" width="76" height="178" rx="34" fill="url(#cyan)"/>
+      <path d="M239 78h34v15h-19v27h-15z" fill="#fff" stroke="none" opacity=".9"/>
+    </g>
+    <g transform="rotate(195 256 256)">
+      <rect x="218" y="52" width="76" height="178" rx="34" fill="#efcf42"/>
+      <path d="M239 78h34v15h-19v27h-15z" fill="#fff" stroke="none" opacity=".9"/>
+    </g>
+    <g transform="rotate(255 256 256)">
+      <rect x="218" y="52" width="76" height="178" rx="34" fill="url(#violet)"/>
+      <path d="M239 78h34v15h-19v27h-15z" fill="#fff" stroke="none" opacity=".9"/>
+    </g>
+  </g>
+  <circle cx="256" cy="256" r="67" fill="#fff" opacity=".96"/>
+  <path d="M256 213l13 29 30 13-30 13-13 29-13-29-30-13 30-13z" fill="#f3a91b"/>
+  <circle cx="256" cy="256" r="9" fill="#fff"/>
+</svg>
