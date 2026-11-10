@@ -85,7 +85,8 @@ await request('/api/admin/students', {
   method: 'POST', cookie: admin, body: { batch_id: batch.id, full_name: 'اسم اختبار مسودة', published: false }, status: 201
 });
 const overview = await (await request('/api/admin/overview', { cookie: admin })).json();
-const album = overview.batches.find(item => item.id === batch.id).albums[0];
+const managedBatch = overview.batches.find(item => item.id === batch.id);
+const album = managedBatch.albums[0];
 function uploadForm({ replace = false, valid = true } = {}) {
   const form = new FormData();
   form.set('file', new File([valid ? fixture : 'invalid'], 'test.' + extension, { type: contentType }));
@@ -120,6 +121,37 @@ const published = await (await request('/api/batches/' + year)).json();
 assert.deepEqual(published.students, ['اسم اختبار منشور']);
 assert.equal(published.albums[0].photos.length, 1);
 assert.equal(published.albums[0].photos[0].caption, 'وصف صورة اختبار');
+const photoId = published.albums[0].photos[0].id;
+const studentIds = managedBatch.students.map(student => student.id);
+async function findStudent(name) {
+  return (await request('/api/student-search', { method: 'POST', body: { name } })).json();
+}
+assert.deepEqual((await findStudent('اسم اختبار')).students.find(student => student.year === year).albums, []);
+await request('/api/admin/photos', {
+  method: 'PATCH', cookie: admin, body: { id: photoId, student_ids: [...studentIds, 9007199254740991] }, status: 422
+});
+await request('/api/admin/photos', {
+  method: 'PATCH', cookie: admin, body: { id: photoId, student_ids: studentIds }
+});
+let found = (await findStudent('إسم اِختبار')).students.filter(student => student.year === year);
+assert.equal(found.length, 1);
+assert.equal(found[0].full_name, 'اسم اختبار منشور');
+assert.equal(found[0].albums[0].photos[0].id, photoId);
+assert.deepEqual((await findStudent('اسم اختبار مسودة')).students, []);
+await request('/api/admin/photos', {
+  method: 'PATCH', cookie: admin, body: { id: photoId, published: false }
+});
+found = (await findStudent('اسم اختبار')).students.filter(student => student.year === year);
+assert.deepEqual(found[0].albums, []);
+await request('/api/admin/photos', {
+  method: 'PATCH', cookie: admin, body: { id: photoId, published: true }
+});
+found = (await findStudent('اسم اختبار')).students.filter(student => student.year === year);
+assert.equal(found[0].albums[0].photos[0].id, photoId);
+await request('/api/admin/photos', {
+  method: 'PATCH', cookie: admin, body: { id: photoId, student_ids: [] }
+});
+assert.deepEqual((await findStudent('اسم اختبار')).students.find(student => student.year === year).albums, []);
 const publicPhoto = await request('/media/' + key);
 assert.equal(publicPhoto.headers.get('content-type'), contentType);
 assert.deepEqual(Buffer.from(await publicPhoto.arrayBuffer()), fixture);

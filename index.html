@@ -73,7 +73,8 @@
           <p class="mt-7 max-w-xl text-lg leading-loose text-white/75 md:text-xl">مساحة تحفظ صور دفعات كلية علوم الحاسوب وتكنولوجيا المعلومات، وتوصل حكايات من سبقونا بمن سيكملون الطريق.</p>
           <div class="mt-9 flex flex-wrap gap-3">
             <a href="#batches" class="inline-flex items-center gap-2 rounded-full bg-[#c8a96b] px-6 py-3 font-bold text-[#102a43] shadow-xl shadow-black/15 transition hover:-translate-y-1 hover:bg-[#e3c98d]">ابدأ الرحلة <i data-lucide="arrow-left" class="h-5 w-5"></i></a>
-            <a href="#story" class="inline-flex items-center gap-2 rounded-full border border-white/25 px-6 py-3 font-semibold text-white/90 transition hover:bg-white/10">عن الفكرة <i data-lucide="sparkles" class="h-5 w-5"></i></a>
+            <a href="#find-photos" class="inline-flex items-center gap-2 rounded-full border border-white/25 px-6 py-3 font-semibold text-white/90 transition hover:bg-white/10">ابحث عن صورك <i data-lucide="sparkles" class="h-5 w-5"></i></a>
+            <a href="#story" class="inline-flex items-center gap-2 px-3 py-3 font-semibold text-white/90 transition hover:text-[#e3c98d]">عن الفكرة</a>
           </div>
         </div>
         <div class="hero-collage relative mx-auto h-[27rem] w-full max-w-md">
@@ -91,6 +92,25 @@
         <div class="border-b border-[#102a43]/10 p-6 text-center md:border-b-0 md:border-l"><strong class="display block text-3xl text-[#1f6f78]">4</strong><span class="text-sm text-slate-500">مراحل دراسية</span></div>
         <div class="border-l border-[#102a43]/10 p-6 text-center"><strong class="display block text-3xl text-[#c1984e]">∞</strong><span class="text-sm text-slate-500">ذكرى لا تنتهي</span></div>
         <div class="p-6 text-center"><strong class="display block text-3xl text-[#102a43]">1</strong><span class="text-sm text-slate-500">حكاية تجمعنا</span></div>
+      </div>
+    </section>
+
+    <section id="find-photos" class="px-5 pt-16 lg:px-8" aria-labelledby="find-photos-title">
+      <div class="mx-auto max-w-7xl">
+        <div class="student-finder">
+          <p class="student-finder-kicker">أرشيف الصور · بحث بالاسم</p>
+          <h2 id="find-photos-title" class="display">وين طلعت بالأرشيف؟</h2>
+          <p>اكتب اسمك وشوف صورك المنشورة، مرتبة حسب الدفعة والألبوم.</p>
+          <form id="student-search" role="search" aria-labelledby="find-photos-title">
+            <label for="student-name">اسم الطالب</label>
+            <div class="student-search-fields">
+              <input id="student-name" name="name" type="search" maxlength="120" placeholder="اكتب الاسم الأول أو الاسم الكامل" autocomplete="off">
+              <button type="submit">ابحث عن الصور</button>
+            </div>
+          </form>
+          <p id="student-search-status" role="status" aria-atomic="true"></p>
+          <div id="student-results"></div>
+        </div>
       </div>
     </section>
 

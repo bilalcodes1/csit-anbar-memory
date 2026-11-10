@@ -334,3 +334,91 @@ collage?.addEventListener('pointerdown', event => {
   touchEffectTimer = setTimeout(clearTouchEffect, 420);
 });
 collage?.addEventListener('pointercancel', clearTouchEffect);
+
+const studentForm = document.getElementById('student-search');
+const studentName = document.getElementById('student-name');
+const studentStatus = document.getElementById('student-search-status');
+const studentResults = document.getElementById('student-results');
+let studentTimer;
+let studentRequest;
+
+function showStudentResults({ students, has_more }) {
+  studentStatus.textContent = students.length
+    ? has_more ? 'ظهرت أول 24 نتيجة. أضف جزءاً من الاسم حتى تضيق البحث.' : `الأسماء المطابقة: ${students.length}`
+    : 'ما لقينا اسم مطابق. جرّب الاسم الأول أو تأكد من كتابة الاسم.';
+
+  const galleries = [];
+  studentResults.innerHTML = students.map((student, index) => {
+    const albums = student.albums.map(album => ({
+      ...album,
+      photos: album.photos.map(entry => ({ ...entry, url: mediaUrl(entry.url) })).filter(entry => entry.url)
+    })).filter(album => album.photos.length);
+    const total = albums.reduce((sum, album) => sum + album.photos.length, 0);
+    const year = Number(student.year);
+
+    return `<details class="student-result" style="--entry-delay:${Math.min(index, 5) * 40}ms" ${students.length === 1 ? 'open' : ''}>
+      <summary><strong>${escapeHtml(student.full_name)}</strong>
+        <span>${year} · ${total ? `عدد الصور: ${total}` : 'ماكو صور مرتبطة بعد'}</span>
+      </summary>
+      <div class="student-result-content">
+        <a href="/batch/${year}">${escapeHtml(student.batch_title)}</a>
+        ${albums.map(album => {
+          const gallery = galleries.push(album) - 1;
+          return `<section class="student-album">
+            <h3>${escapeHtml(album.title)}</h3>
+            <div class="student-photos" data-gallery="${gallery}">${album.photos.map((entry, i) => thumbnail(entry, i, album.title)).join('')}</div>
+          </section>`;
+        }).join('') || '<p>الاسم منشور ضمن الدفعة، ولسه ماكو صور منشورة مرتبطة بيه.</p>'}
+      </div>
+    </details>`;
+  }).join('');
+
+  studentResults.onclick = event => {
+    const button = event.target.closest('[data-photo]');
+    if (!button) return;
+    const gallery = galleries[Number(button.closest('[data-gallery]').dataset.gallery)];
+    openPhoto(gallery, Number(button.dataset.photo));
+  };
+}
+
+async function searchStudents(name) {
+  const controller = new AbortController();
+  studentRequest = controller;
+  studentStatus.textContent = 'جارٍ البحث عن الاسم…';
+  try {
+    const response = await fetch('/api/student-search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+      signal: controller.signal
+    });
+    const data = await response.json();
+    if (controller.signal.aborted) return;
+    if (response.status === 422) studentStatus.textContent = data.error;
+    else if (response.ok) showStudentResults(data);
+    else throw new Error('Search failed');
+  } catch {
+    if (!controller.signal.aborted) studentStatus.textContent = 'تعذّر البحث هسه. اضغط زر البحث حتى تعيد المحاولة.';
+  }
+}
+
+function scheduleStudentSearch(delay) {
+  clearTimeout(studentTimer);
+  studentRequest?.abort();
+  studentResults.replaceChildren();
+  studentStatus.textContent = '';
+  const name = studentName.value.trim();
+  if (name.length < 2) {
+    if (name || !delay) studentStatus.textContent = 'اكتب حرفين على الأقل للبحث.';
+    return;
+  }
+  studentTimer = setTimeout(() => searchStudents(name), delay);
+}
+
+studentForm.addEventListener('submit', event => {
+  event.preventDefault();
+  scheduleStudentSearch(0);
+});
+studentName.addEventListener('input', event => {
+  if (!event.isComposing) scheduleStudentSearch(280);
+});

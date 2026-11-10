@@ -50,8 +50,11 @@ export async function onRequestGet({ request, env }) {
     ]);
     const albumData = [];
     for (const album of albums.results) {
-      const photos = await env.DB.prepare("SELECT * FROM photos WHERE album_id = ? ORDER BY sort_order, id").bind(album.id).all();
-      albumData.push({ ...album, photos: photos.results.map(photo => ({ ...photo, url: `/media/${photo.object_key}` })) });
+      const photos = await env.DB.prepare(`
+        SELECT photos.*, (SELECT json_group_array(student_id) FROM photo_students WHERE photo_id = photos.id) AS student_ids
+        FROM photos WHERE album_id = ? ORDER BY sort_order, id
+      `).bind(album.id).all();
+      albumData.push({ ...album, photos: photos.results.map(photo => ({ ...photo, student_ids: JSON.parse(photo.student_ids), url: `/media/${photo.object_key}` })) });
     }
     batches.push({ ...batch, albums: albumData, students: students.results });
   }

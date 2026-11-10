@@ -72,3 +72,60 @@
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
   .hero-photo:hover { translate: 0 -8px; scale: 1.04; z-index: 11; box-shadow: 0 24px 46px #07152170; }
 }
+
+#find-photos { scroll-margin-top: 7rem; }
+.student-finder {
+  padding: clamp(1rem, 4vw, 3rem);
+  border: 1px solid #102a4320;
+  border-radius: 1.75rem;
+  background: radial-gradient(ellipse at top left, #e3c98d55, transparent 60%), #fff;
+  box-shadow: 0 14px 36px #102a4310;
+}
+.student-finder-kicker { color: var(--teal); font-weight: 700; }
+.student-finder h2 { font-size: clamp(1.4rem, 4vw, 2.5rem); font-weight: 700; }
+#student-search { max-width: 38rem; margin-block-start: 1.25rem; }
+#student-search label { display: block; font-weight: 700; }
+.student-search-fields { display: flex; flex-wrap: wrap; gap: .5rem; margin-block-start: .35rem; }
+.student-search-fields input {
+  flex: 1 1 15rem;
+  min-width: 0;
+  min-height: 48px;
+  padding-inline: .85rem;
+  border: 1px solid #102a4355;
+  border-radius: .85rem;
+  background: #fff;
+  font-size: 1rem;
+}
+.student-search-fields button {
+  min-height: 48px;
+  padding-inline: 1rem;
+  border-radius: .85rem;
+  background: var(--ink);
+  color: #fff;
+  font-weight: 700;
+}
+#student-search-status:not(:empty) { margin-block-start: 1rem; color: #40566b; }
+#student-results { display: grid; gap: .75rem; }
+.student-result {
+  margin-block-start: .75rem;
+  border: 1px solid #102a4325;
+  border-radius: 1rem;
+  background: #fff;
+  animation: student-arrival .32s ease-out both;
+  animation-delay: var(--entry-delay, 0ms);
+}
+.student-result summary { cursor: pointer; padding: .8rem 1rem; }
+.student-result summary strong { overflow-wrap: anywhere; }
+.student-result summary span { display: inline-block; color: #40566b; margin-inline-start: .5rem; }
+.student-result-content { display: grid; gap: .9rem; padding: 0 1rem 1rem; }
+.student-result-content a { color: var(--teal); text-decoration: underline; width: fit-content; }
+.student-album h3 { font-weight: 700; margin-block-end: .4rem; }
+.student-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 8rem), 1fr)); gap: .65rem; }
+.student-photos .photo-thumb { aspect-ratio: 4 / 3; }
+@keyframes student-arrival {
+  from { opacity: 0; transform: translateY(9px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .student-result { animation: none; }
+}
