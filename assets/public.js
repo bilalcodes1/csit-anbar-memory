@@ -96,18 +96,14 @@ function render() {
 }
 
 function showDetail(b) {
-  const albums = [
-    ...(b.image ? [{ title: 'صورة الدفعة', subtitle: 'اللحظة التي جمعتنا', icon: 'users', image: b.image,
-      count: 'صورة الدفعة', photos: [{ url: b.image, alt_text: b.title }] }] : []),
-    ...b.albums.map(album => ({
-      title: album.title,
-      subtitle: album.subtitle || 'أيام صنعت الذكرى',
-      icon: 'images',
-      image: mediaUrl(album.photos[0]?.url),
-      count: album.photos.length + ' صور',
-      photos: album.photos.map(entry => ({ ...entry, url: mediaUrl(entry.url) })).filter(entry => entry.url)
-    }))
-  ];
+  const cover = b.image ? { title: 'غلاف الدفعة', photos: [{ url: b.image, alt_text: b.title }] } : null;
+  const albums = b.albums.map(album => ({
+    title: album.title,
+    subtitle: album.subtitle || 'أيام صنعت الذكرى',
+    image: mediaUrl(album.photos[0]?.url),
+    count: album.photos.length + ' صور',
+    photos: album.photos.map(entry => ({ ...entry, url: mediaUrl(entry.url) })).filter(entry => entry.url)
+  }));
 
   modalContent.innerHTML = `
         <div class="overflow-hidden rounded-[1.7rem] bg-gradient-to-br ${b.tone} p-6 text-white md:p-8">
@@ -116,9 +112,9 @@ function showDetail(b) {
           <p class="mt-5 max-w-xl text-lg leading-loose text-white/75">${escapeHtml(b.quote || b.description)}</p>
         </div>
         <p id="share-feedback" role="status" class="break-all"></p>
-        <div class="mt-7 overflow-hidden rounded-3xl bg-white shadow-lg">${photo(b.image, b.title, "max-h-[28rem] w-full object-cover")}<div class="flex flex-wrap items-center justify-between gap-3 p-5"><span class="text-sm text-slate-500">${b.students.length} أسماء منشورة</span><span class="rounded-full bg-[#eee8da] px-4 py-2 text-sm font-bold text-[#102a43]">كل صورة لها حكاية</span></div></div>
+        <div class="mt-7 overflow-hidden rounded-3xl bg-white shadow-lg">${cover ? `<button type="button" id="batch-cover" class="block w-full" aria-label="عرض غلاف الدفعة">${photo(b.image, b.title, "max-h-[28rem] w-full object-cover")}</button>` : ''}<div class="flex flex-wrap items-center justify-between gap-3 p-5"><span class="text-sm text-slate-500">${b.students.length} أسماء منشورة</span><span class="rounded-full bg-[#eee8da] px-4 py-2 text-sm font-bold text-[#102a43]">كل صورة لها حكاية</span></div></div>
         <div class="mt-8 flex items-end justify-between gap-4"><div><p class="text-sm font-bold tracking-widest text-[#1f6f78]">أقسام الألبوم السنوي</p><h3 class="display mt-2 text-3xl font-bold text-[#102a43]">استكشف فصول الدفعة</h3></div><span class="text-sm text-slate-500">${albums.length} أقسام</span></div>
-        <div class="mt-5 grid gap-4 sm:grid-cols-2">${albums.map((album, index) => `<button data-album="${index}" class="album-tile group relative h-44 overflow-hidden rounded-2xl bg-[#102a43] text-right shadow-md">${photo(album.image, album.title, "h-full w-full object-cover opacity-70")}<span class="absolute inset-0 bg-gradient-to-t from-[#102a43] via-[#102a43]/25 to-transparent"></span><span class="absolute inset-x-4 bottom-4 text-white"><i data-lucide="${album.icon}" class="mb-2 h-5 w-5 text-[#e3c98d]"></i><strong class="block text-lg">${escapeHtml(album.title)}</strong><small class="text-white/70">${escapeHtml(album.subtitle)} · ${album.count}</small></span></button>`).join('')}</div>
+        <div class="mt-5 grid gap-4 sm:grid-cols-2">${albums.map((album, index) => `<button data-album="${index}" class="album-tile group relative h-44 overflow-hidden rounded-2xl bg-[#102a43] text-right shadow-md">${photo(album.image, album.title, "h-full w-full object-cover opacity-70")}<span class="absolute inset-0 bg-gradient-to-t from-[#102a43] via-[#102a43]/25 to-transparent"></span><span class="absolute inset-x-4 bottom-4 text-white"><i data-lucide="images" class="mb-2 h-5 w-5 text-[#e3c98d]"></i><strong class="block text-lg">${escapeHtml(album.title)}</strong><small class="text-white/70">${escapeHtml(album.subtitle)} · ${album.count}</small></span></button>`).join('')}</div>
         <div id="album-viewer" class="mt-7 hidden rounded-3xl border border-[#102a43]/10 bg-white p-5"><div class="flex items-center justify-between gap-4"><div><p class="text-xs font-bold tracking-widest text-[#1f6f78]">الألبوم المختار</p><h4 id="album-title" tabindex="-1" class="mt-1 text-xl font-bold text-[#102a43]"></h4></div><button id="album-close" class="rounded-full bg-[#eee8da] p-2 text-[#102a43]" aria-label="إغلاق الألبوم"><i data-lucide="x" class="h-4 w-4"></i></button></div><div id="album-images" class="mt-4 grid grid-cols-2 gap-3"></div></div>
     <section class="mt-7 rounded-3xl border border-[#102a43]/10 bg-white p-5">
       <h3 class="display mb-2 text-xl font-bold text-[#102a43]">أسماء الطلبة</h3>
@@ -126,6 +122,7 @@ function showDetail(b) {
         : '<p class="text-sm text-slate-600">لا توجد أسماء منشورة لهذه الدفعة.</p>'}
     </section>`;
 
+  modalContent.querySelector('#batch-cover')?.addEventListener('click', () => openPhoto(cover, 0));
   const viewer = modalContent.querySelector('#album-viewer');
   const albumTitle = modalContent.querySelector('#album-title');
   let activeTile;
