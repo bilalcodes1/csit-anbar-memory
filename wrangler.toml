@@ -14,3 +14,4 @@ bucket_name = "csit-anbar-memory-images"
 
 [vars]
 SITE_NAME = "ذاكرة الكلية"
+# Set ADMIN_SETUP_TOKEN as a secret before calling /api/auth/setup.

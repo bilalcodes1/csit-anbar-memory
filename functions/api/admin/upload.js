@@ -1,8 +1,8 @@
-import { requireAdmin } from "./_auth.js";
+import { requireUser, audit } from "./_guard.js";
 
 export async function onRequestPost({ request, env }) {
-  const denied = requireAdmin(request, env);
-  if (denied) return denied;
+  const auth = await requireUser(request, env);
+  if (auth.response) return auth.response;
   if (!env.IMAGES) return Response.json({ error: "تخزين الصور غير مربوط" }, { status: 503 });
 
   const form = await request.formData();
@@ -18,5 +18,6 @@ export async function onRequestPost({ request, env }) {
   await env.IMAGES.put(key, file.stream(), {
     httpMetadata: { contentType: file.type }
   });
+  await audit(env, auth.session, "upload", "image", key, { size: file.size, type: file.type });
   return Response.json({ ok: true, key, url: `/media/${key}` }, { status: 201 });
 }

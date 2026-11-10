@@ -34,9 +34,10 @@ python3 -m http.server 8000
 npx wrangler d1 migrations apply csit-anbar-memory --remote
 ```
 
-5. أضف المتغير السري `ADMIN_TOKEN` في إعدادات Pages Functions، ولا تضعه داخل الملفات.
+5. أضف المتغير السري `ADMIN_SETUP_TOKEN` في إعدادات Pages Functions، ولا تضعه داخل الملفات.
 6. اربط D1 بالاسم `DB` وR2 بالاسم `IMAGES`.
-7. افتح `/admin.html` لإضافة الدفعات بعد تسجيل الدخول بالرمز السري.
+7. نفّذ إنشاء المدير الأول مرة واحدة عبر `POST /api/auth/setup` باستخدام رمز التهيئة، ثم احذف/غيّر رمز التهيئة من الأسرار.
+8. افتح `/admin.html` لتسجيل الدخول وإدارة الأرشيف.
 
 الـAPI العام:
 
@@ -46,8 +47,13 @@ npx wrangler d1 migrations apply csit-anbar-memory --remote
 
 الـAPI الإداري:
 
-- `POST /api/admin/batches` لإضافة دفعة.
-- `POST /api/admin/upload` لرفع صورة.
+- `POST /api/auth/login` و`POST /api/auth/logout` لتسجيل الدخول والخروج.
+- `POST /api/auth/setup` لإنشاء المدير الأول مرة واحدة.
+- `GET/POST /api/admin/batches` و`PATCH/DELETE /api/admin/batches/:id` لإدارة الدفعات.
+- `POST/PATCH/DELETE /api/admin/albums` لإدارة الألبومات.
+- `POST/PATCH/DELETE /api/admin/students` لإدارة أسماء الطلبة.
+- `POST /api/admin/upload` و`DELETE /api/admin/media` لرفع الصور وحذفها.
+- `GET/POST/PATCH /api/admin/users` لإدارة حسابات المشرفين والمديرين.
 
 لا يُعتبر المشروع جاهزًا للنشر العام قبل إضافة الصور الرسمية، اعتماد الأسماء، وضع سياسة تواصل للحذف والتصحيح، وربط معرّف قاعدة D1 الحقيقي.
 
