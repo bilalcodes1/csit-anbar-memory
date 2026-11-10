@@ -42,8 +42,15 @@
 .album-tile[aria-expanded="true"] { outline: 2px solid #a67c36; outline-offset: 3px; }
 #album-images > figure { min-width: 0; }
 #album-viewer { scroll-margin-top: 3rem; }
-#batches [data-filter], #album-close { min-height: 44px; }
-#album-close { min-width: 44px; }
+#filters .filter-btn { flex: 1 1 0; min-height: 44px; white-space: nowrap; color: #475569; }
+#filters .filter-btn[aria-pressed="true"] { background: var(--ink); color: white; }
+#album-close { display: grid; place-items: center; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; }
+@media (hover: hover) {
+  #filters .filter-btn[aria-pressed="false"]:hover, #album-close:hover { background: #e2e8f0; }
+}
+@media (max-width: 420px) {
+  #filters .filter-btn { padding-inline: .5rem; }
+}
 @media (prefers-reduced-motion: no-preference) {
   .archive-reveal { animation: archive-enter .55s cubic-bezier(.2,.7,.25,1) backwards; }
   .year-card.archive-reveal:nth-child(even) { animation-delay: .07s; }
@@ -56,4 +63,12 @@
 @keyframes archive-photo-in {
   from { opacity: .35; transform: scale(1.07); }
   to { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-photo { transition: translate .26s ease, scale .26s ease, box-shadow .26s ease; }
+  .hero-photo.is-touched { translate: 0 -8px; scale: 1.04; z-index: 11; box-shadow: 0 24px 46px #07152170; }
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .hero-photo:hover { translate: 0 -8px; scale: 1.04; z-index: 11; box-shadow: 0 24px 46px #07152170; }
 }

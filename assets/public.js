@@ -115,7 +115,7 @@ function showDetail(b) {
         <div class="mt-7 overflow-hidden rounded-3xl bg-white shadow-lg">${cover ? `<button type="button" id="batch-cover" class="block w-full" aria-label="عرض غلاف الدفعة">${photo(b.image, b.title, "max-h-[28rem] w-full object-cover")}</button>` : ''}<div class="flex flex-wrap items-center justify-between gap-3 p-5"><span class="text-sm text-slate-500">${b.students.length} أسماء منشورة</span><span class="rounded-full bg-[#eee8da] px-4 py-2 text-sm font-bold text-[#102a43]">كل صورة لها حكاية</span></div></div>
         <div class="mt-8 flex items-end justify-between gap-4"><div><p class="text-sm font-bold tracking-widest text-[#1f6f78]">أقسام الألبوم السنوي</p><h3 class="display mt-2 text-3xl font-bold text-[#102a43]">استكشف فصول الدفعة</h3></div><span class="text-sm text-slate-500">${albums.length} أقسام</span></div>
         <div class="mt-5 grid gap-4 sm:grid-cols-2">${albums.map((album, index) => `<button data-album="${index}" class="album-tile group relative h-44 overflow-hidden rounded-2xl bg-[#102a43] text-right shadow-md">${photo(album.image, album.title, "h-full w-full object-cover opacity-70")}<span class="absolute inset-0 bg-gradient-to-t from-[#102a43] via-[#102a43]/25 to-transparent"></span><span class="absolute inset-x-4 bottom-4 text-white"><i data-lucide="images" class="mb-2 h-5 w-5 text-[#e3c98d]"></i><strong class="block text-lg">${escapeHtml(album.title)}</strong><small class="text-white/70">${escapeHtml(album.subtitle)} · ${album.count}</small></span></button>`).join('')}</div>
-        <div id="album-viewer" class="mt-7 hidden rounded-3xl border border-[#102a43]/10 bg-white p-5"><div class="flex items-center justify-between gap-4"><div><p class="text-xs font-bold tracking-widest text-[#1f6f78]">الألبوم المختار</p><h4 id="album-title" tabindex="-1" class="mt-1 text-xl font-bold text-[#102a43]"></h4></div><button id="album-close" class="rounded-full bg-[#eee8da] p-2 text-[#102a43]" aria-label="إغلاق الألبوم"><i data-lucide="x" class="h-4 w-4"></i></button></div><div id="album-images" class="mt-4 grid grid-cols-2 gap-3"></div></div>
+        <div id="album-viewer" class="mt-7 hidden rounded-3xl border border-[#102a43]/10 bg-white p-5"><div class="flex items-center justify-between gap-4"><div><p class="text-xs font-bold tracking-widest text-[#1f6f78]">الألبوم المختار</p><h4 id="album-title" tabindex="-1" class="mt-1 text-xl font-bold text-[#102a43]"></h4></div><button id="album-close" type="button" class="rounded-full bg-[#eee8da] text-[#102a43]" aria-label="إغلاق الألبوم"><i data-lucide="x" class="h-5 w-5" aria-hidden="true"></i></button></div><div id="album-images" class="mt-4 grid grid-cols-2 gap-3"></div></div>
     <section class="mt-7 rounded-3xl border border-[#102a43]/10 bg-white p-5">
       <h3 class="display mb-2 text-xl font-bold text-[#102a43]">أسماء الطلبة</h3>
       ${b.students.length ? `<ul class="list-inside list-disc">${b.students.map(name => `<li>${escapeHtml(name)}</li>`).join('')}</ul>`
@@ -221,11 +221,7 @@ filters.forEach(button => {
   button.addEventListener('click', () => {
     activeFilter = button.dataset.filter;
     for (const item of filters) {
-      const active = item === button;
-      item.setAttribute('aria-pressed', String(active));
-      item.classList.toggle('bg-[#102a43]', active);
-      item.classList.toggle('text-white', active);
-      item.classList.toggle('text-slate-500', !active);
+      item.setAttribute('aria-pressed', String(item === button));
     }
     render();
   });
@@ -317,3 +313,24 @@ function scheduleProgress() {
 window.addEventListener('scroll', scheduleProgress, { passive: true });
 window.addEventListener('resize', scheduleProgress);
 syncProgress();
+
+const collage = document.querySelector('.hero-collage');
+let touchedPhoto;
+let touchEffectTimer;
+
+function clearTouchEffect() {
+  clearTimeout(touchEffectTimer);
+  touchedPhoto?.classList.remove('is-touched');
+  touchedPhoto = undefined;
+}
+
+collage?.addEventListener('pointerdown', event => {
+  if (event.pointerType !== 'touch' || motionPreference.matches) return;
+  const frame = event.target.closest('.hero-photo');
+  if (!frame) return;
+  clearTouchEffect();
+  touchedPhoto = frame;
+  frame.classList.add('is-touched');
+  touchEffectTimer = setTimeout(clearTouchEffect, 420);
+});
+collage?.addEventListener('pointercancel', clearTouchEffect);
