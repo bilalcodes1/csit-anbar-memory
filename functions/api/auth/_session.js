@@ -25,7 +25,7 @@ export async function getSession(request, env) {
   const token = parseCookies(request)[COOKIE_NAME];
   if (!token || !env.DB) return null;
   const session = await env.DB.prepare(`
-    SELECT sessions.id, sessions.user_id, users.email, users.name, users.role
+    SELECT sessions.id, sessions.user_id, users.username, users.name, users.role
     FROM sessions JOIN users ON users.id = sessions.user_id
     WHERE sessions.id = ? AND sessions.expires_at > CURRENT_TIMESTAMP AND users.active = 1
   `).bind(token).first();

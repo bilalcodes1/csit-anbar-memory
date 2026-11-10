@@ -4,7 +4,7 @@ import { requireUser, audit } from "./_guard.js";
 export async function onRequestGet({ request, env }) {
   const auth = await requireUser(request, env, true);
   if (auth.response) return auth.response;
-  const { results } = await env.DB.prepare("SELECT id, email, name, role, active, created_at FROM users ORDER BY id").all();
+  const { results } = await env.DB.prepare("SELECT id, username, name, role, active, created_at FROM users ORDER BY id").all();
   return Response.json(results);
 }
 
@@ -13,16 +13,16 @@ export async function onRequestPost({ request, env }) {
   if (auth.response) return auth.response;
   let payload;
   try { payload = await request.json(); } catch { return Response.json({ error: "بيانات غير صالحة" }, { status: 400 }); }
-  const email = String(payload.email || "").trim().toLowerCase();
+  const username = String(payload.username || "").trim().toLowerCase();
   const name = String(payload.name || "").trim();
   const password = String(payload.password || "");
   const role = payload.role === "admin" ? "admin" : "editor";
-  if (!email.includes("@") || name.length < 2 || password.length < 12) {
-    return Response.json({ error: "الاسم والبريد وكلمة المرور (12 رمزًا على الأقل) مطلوبة" }, { status: 422 });
+  if (!/^[a-z0-9_-]{3,32}$/.test(username) || name.length < 2 || password.length < 12) {
+    return Response.json({ error: "اسم المستخدم الإنجليزي والاسم وكلمة المرور (12 رمزًا على الأقل) مطلوبة" }, { status: 422 });
   }
-  await env.DB.prepare("INSERT INTO users (email, name, password_hash, role) VALUES (?, ?, ?, ?)")
-    .bind(email, name, await hashPassword(password), role).run();
-  await audit(env, auth.session, "create", "user", email, { role });
+  await env.DB.prepare("INSERT INTO users (email, username, name, password_hash, role) VALUES (?, ?, ?, ?, ?)")
+    .bind(`${username}@local.invalid`, username, name, await hashPassword(password), role).run();
+  await audit(env, auth.session, "create", "user", username, { role });
   return Response.json({ ok: true }, { status: 201 });
 }
 

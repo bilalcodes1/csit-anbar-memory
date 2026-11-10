@@ -37,3 +37,8 @@ export async function verifyPassword(password, stored) {
 export function randomToken() {
   return `${crypto.randomUUID()}${crypto.randomUUID().replaceAll("-", "")}`;
 }
+
+export async function hashToken(value) {
+  const digest = await crypto.subtle.digest("SHA-256", encoder.encode(value));
+  return bytesToBase64(new Uint8Array(digest));
+}
