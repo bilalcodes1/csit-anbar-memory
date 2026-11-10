@@ -10,6 +10,14 @@ const archiveCovers = new Set([2022, 2023, 2024, 2026]);
 let batches;
 let activeFilter = 'all';
 let detailRequest;
+const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
+const reveal = 'IntersectionObserver' in window ? new IntersectionObserver(entries => {
+  for (const entry of entries) {
+    if (!entry.isIntersecting) continue;
+    if (!motionPreference.matches) entry.target.classList.add('archive-reveal');
+    reveal.unobserve(entry.target);
+  }
+}, { threshold: 0.12 }) : null;
 
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -83,6 +91,7 @@ function render() {
           <a href="/batch/${b.year}" data-year="${b.year}" class="relative block h-80 w-full overflow-hidden bg-gradient-to-br ${b.tone} text-right">${photo(b.image, b.title, "photo-frame h-full w-full object-cover")}<span class="photo-shine absolute inset-0"></span><div class="absolute inset-0 bg-gradient-to-t from-[#102a43]/95 via-[#102a43]/20 to-transparent"></div><div class="absolute inset-x-6 top-6 flex items-start justify-between text-white"><span class="rounded-full border border-white/25 bg-black/10 px-3 py-1 text-xs">${b.label}</span><span class="display text-6xl font-bold text-[#e3c98d]">${b.year}</span></div><div class="absolute inset-x-6 bottom-6 text-white"><i data-lucide="camera" class="mb-3 h-7 w-7 text-[#e3c98d]"></i><h3 class="display text-2xl font-bold">${escapeHtml(b.title)}</h3><p class="mt-2 text-sm text-white/75">${escapeHtml(b.quote)}</p></div></a>
           <div class="flex items-center justify-between gap-4 p-5"><span class="text-sm text-slate-500">${b.albums.length} ألبوم</span><a href="/batch/${b.year}" data-year="${b.year}" class="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#eee8da] px-4 py-2 text-sm font-bold text-[#102a43] transition hover:bg-[#c8a96b]">افتح الصورة <i data-lucide="maximize-2" class="h-4 w-4"></i></a></div>
         </article>`).join('');
+  grid.querySelectorAll('.year-card').forEach(card => reveal?.observe(card));
   icons();
 }
 
@@ -110,7 +119,7 @@ function showDetail(b) {
         <div class="mt-7 overflow-hidden rounded-3xl bg-white shadow-lg">${photo(b.image, b.title, "max-h-[28rem] w-full object-cover")}<div class="flex flex-wrap items-center justify-between gap-3 p-5"><span class="text-sm text-slate-500">${b.students.length} أسماء منشورة</span><span class="rounded-full bg-[#eee8da] px-4 py-2 text-sm font-bold text-[#102a43]">كل صورة لها حكاية</span></div></div>
         <div class="mt-8 flex items-end justify-between gap-4"><div><p class="text-sm font-bold tracking-widest text-[#1f6f78]">أقسام الألبوم السنوي</p><h3 class="display mt-2 text-3xl font-bold text-[#102a43]">استكشف فصول الدفعة</h3></div><span class="text-sm text-slate-500">${albums.length} أقسام</span></div>
         <div class="mt-5 grid gap-4 sm:grid-cols-2">${albums.map((album, index) => `<button data-album="${index}" class="album-tile group relative h-44 overflow-hidden rounded-2xl bg-[#102a43] text-right shadow-md">${photo(album.image, album.title, "h-full w-full object-cover opacity-70")}<span class="absolute inset-0 bg-gradient-to-t from-[#102a43] via-[#102a43]/25 to-transparent"></span><span class="absolute inset-x-4 bottom-4 text-white"><i data-lucide="${album.icon}" class="mb-2 h-5 w-5 text-[#e3c98d]"></i><strong class="block text-lg">${escapeHtml(album.title)}</strong><small class="text-white/70">${escapeHtml(album.subtitle)} · ${album.count}</small></span></button>`).join('')}</div>
-        <div id="album-viewer" class="mt-7 hidden rounded-3xl border border-[#102a43]/10 bg-white p-5"><div class="flex items-center justify-between gap-4"><div><p class="text-xs font-bold tracking-widest text-[#1f6f78]">الألبوم المختار</p><h4 id="album-title" class="mt-1 text-xl font-bold text-[#102a43]"></h4></div><button id="album-close" class="rounded-full bg-[#eee8da] p-2 text-[#102a43]" aria-label="إغلاق الألبوم"><i data-lucide="x" class="h-4 w-4"></i></button></div><div id="album-images" class="mt-4 grid grid-cols-2 gap-3"></div></div>
+        <div id="album-viewer" class="mt-7 hidden rounded-3xl border border-[#102a43]/10 bg-white p-5"><div class="flex items-center justify-between gap-4"><div><p class="text-xs font-bold tracking-widest text-[#1f6f78]">الألبوم المختار</p><h4 id="album-title" tabindex="-1" class="mt-1 text-xl font-bold text-[#102a43]"></h4></div><button id="album-close" class="rounded-full bg-[#eee8da] p-2 text-[#102a43]" aria-label="إغلاق الألبوم"><i data-lucide="x" class="h-4 w-4"></i></button></div><div id="album-images" class="mt-4 grid grid-cols-2 gap-3"></div></div>
     <section class="mt-7 rounded-3xl border border-[#102a43]/10 bg-white p-5">
       <h3 class="display mb-2 text-xl font-bold text-[#102a43]">أسماء الطلبة</h3>
       ${b.students.length ? `<ul class="list-inside list-disc">${b.students.map(name => `<li>${escapeHtml(name)}</li>`).join('')}</ul>`
@@ -118,9 +127,18 @@ function showDetail(b) {
     </section>`;
 
   const viewer = modalContent.querySelector('#album-viewer');
+  const albumTitle = modalContent.querySelector('#album-title');
+  let activeTile;
+  modalContent.querySelectorAll('[data-album]').forEach(tile => {
+    tile.setAttribute('aria-controls', viewer.id);
+    tile.setAttribute('aria-expanded', 'false');
+  });
   modalContent.querySelectorAll('[data-album]').forEach(tile => tile.addEventListener('click', () => {
     const album = albums[Number(tile.dataset.album)];
-    modalContent.querySelector('#album-title').textContent = album.title;
+    activeTile?.setAttribute('aria-expanded', 'false');
+    activeTile = tile;
+    activeTile.setAttribute('aria-expanded', 'true');
+    albumTitle.textContent = album.title;
     modalContent.querySelector('#album-images').innerHTML = album.photos.length ? album.photos.map((entry, index) => `
       <figure>${thumbnail(entry, index, album.title)}
         ${entry.caption ? `<figcaption class="mt-2 text-sm">${escapeHtml(entry.caption)}</figcaption>` : ''}
@@ -129,9 +147,14 @@ function showDetail(b) {
       button.addEventListener('click', () => openPhoto(album, Number(button.dataset.photo)));
     });
     viewer.classList.remove('hidden');
+    albumTitle.focus({ preventScroll: true });
     viewer.scrollIntoView({ block: 'nearest' });
   }));
-  modalContent.querySelector('#album-close').addEventListener('click', () => viewer.classList.add('hidden'));
+  modalContent.querySelector('#album-close').addEventListener('click', () => {
+    viewer.classList.add('hidden');
+    activeTile?.setAttribute('aria-expanded', 'false');
+    activeTile?.focus();
+  });
   modalContent.querySelector('#share-batch').addEventListener('click', () => shareBatch(b));
   icons();
 }
@@ -223,6 +246,7 @@ const prevPhoto = document.getElementById('photo-prev');
 const nextPhoto = document.getElementById('photo-next');
 let photoAlbum;
 let photoIndex = 0;
+let photoTransition;
 
 function thumbnail(entry, index, title) {
   const alt = entry.alt_text || title;
@@ -234,6 +258,10 @@ function displayPhoto() {
   photoTitle.textContent = photoAlbum.title;
   fullPhoto.alt = entry.alt_text || photoAlbum.title;
   fullPhoto.src = entry.url;
+  if (!motionPreference.matches) {
+    photoTransition?.cancel();
+    photoTransition = fullPhoto.animate?.([{ opacity: .55 }, { opacity: 1 }], { duration: 220, easing: 'ease-out' });
+  }
   photoCaption.textContent = entry.caption || '';
   photoCount.textContent = `${photoIndex + 1} / ${photoAlbum.photos.length}`;
   prevPhoto.disabled = nextPhoto.disabled = photoAlbum.photos.length < 2;
@@ -277,83 +305,18 @@ stage.addEventListener('touchend', event => {
   swipeStart = null;
 }, { passive: true });
 
-const activities = document.getElementById('activity-albums');
-const activityStatus = document.getElementById('activity-status');
-const activityViewer = document.getElementById('activity-viewer');
-const activityTitle = document.getElementById('activity-title');
-const activityPhotos = document.getElementById('activity-photos');
-const activityMore = document.getElementById('activity-more');
-const activityRetry = document.getElementById('activity-retry');
-const photosPerPage = 12;
-let activityAlbums = [];
-let selectedActivity;
-let activityTrigger;
-let displayedPhotos = 0;
+document.querySelectorAll('[data-reveal]').forEach(section => reveal?.observe(section));
 
-function showMorePhotos(moveFocus = false) {
-  const end = Math.min(displayedPhotos + photosPerPage, selectedActivity.photos.length);
-  const newPhotos = selectedActivity.photos.slice(displayedPhotos, end);
-  activityPhotos.insertAdjacentHTML('beforeend', newPhotos.map((entry, offset) =>
-    thumbnail(entry, displayedPhotos + offset, selectedActivity.title)
-  ).join(''));
-  if (moveFocus && newPhotos.length) activityPhotos.children[displayedPhotos].focus();
-  displayedPhotos = end;
-  activityMore.hidden = displayedPhotos >= selectedActivity.photos.length;
+const progress = document.querySelector('.archive-progress');
+let scrollFrame;
+function syncProgress() {
+  scrollFrame = undefined;
+  const distance = document.documentElement.scrollHeight - window.innerHeight;
+  progress.style.transform = `scaleX(${distance > 0 ? Math.min(1, Math.max(0, window.scrollY / distance)) : 0})`;
 }
-
-function showActivity(album, trigger) {
-  activityTrigger?.setAttribute('aria-expanded', 'false');
-  activityTrigger = trigger;
-  activityTrigger.setAttribute('aria-expanded', 'true');
-  selectedActivity = album;
-  displayedPhotos = 0;
-  activityTitle.textContent = album.title;
-  activityPhotos.innerHTML = album.photos.length ? '' : '<p>لا توجد صور منشورة في هذا الألبوم.</p>';
-  activityViewer.hidden = false;
-  showMorePhotos();
-  activityTitle.focus({ preventScroll: true });
-  activityViewer.scrollIntoView({ block: 'nearest' });
+function scheduleProgress() {
+  scrollFrame ??= requestAnimationFrame(syncProgress);
 }
-
-async function loadActivities() {
-  activityRetry.hidden = true;
-  activityStatus.textContent = 'جارٍ تحميل النشاطات…';
-  try {
-    const data = await fetchJson('/api/activities');
-    if (!Array.isArray(data)) throw new Error('Invalid activities response');
-    activityAlbums = data.map(album => ({
-      ...album,
-      photos: album.photos.map(entry => ({ ...entry, url: mediaUrl(entry.url) })).filter(entry => entry.url)
-    }));
-    activities.innerHTML = activityAlbums.map((album, index) => `
-      <button type="button" class="activity-card" data-activity="${index}" aria-expanded="false" aria-controls="activity-viewer">
-        ${photo(album.photos[0]?.url, '', '')}
-        <span class="activity-card-copy">
-          <small>${escapeHtml(album.subtitle)} · ${album.photos.length} صورة</small>
-          <strong class="display">${escapeHtml(album.title)}</strong>
-          <span>افتح الألبوم</span>
-        </span>
-      </button>`).join('');
-    activityStatus.textContent = activityAlbums.length ? '' : 'لا توجد نشاطات منشورة حاليًا.';
-  } catch {
-    activityStatus.textContent = 'تعذّر تحميل النشاطات الآن.';
-    activityRetry.hidden = false;
-  }
-}
-
-activities.addEventListener('click', event => {
-  const trigger = event.target.closest('[data-activity]');
-  if (trigger) showActivity(activityAlbums[Number(trigger.dataset.activity)], trigger);
-});
-activityPhotos.addEventListener('click', event => {
-  const trigger = event.target.closest('[data-photo]');
-  if (trigger) openPhoto(selectedActivity, Number(trigger.dataset.photo));
-});
-activityMore.addEventListener('click', () => showMorePhotos(true));
-activityRetry.addEventListener('click', loadActivities);
-document.getElementById('activity-close').addEventListener('click', () => {
-  activityViewer.hidden = true;
-  activityTrigger?.setAttribute('aria-expanded', 'false');
-  activityTrigger?.focus();
-});
-loadActivities();
+window.addEventListener('scroll', scheduleProgress, { passive: true });
+window.addEventListener('resize', scheduleProgress);
+syncProgress();

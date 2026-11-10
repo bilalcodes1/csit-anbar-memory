@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { extname } from 'node:path';
 
 const base = process.env.ARCHIVE_TEST_URL || 'http://127.0.0.1:8788';
 const setupToken = process.env.ARCHIVE_TEST_SETUP_TOKEN;
@@ -10,8 +12,13 @@ const password = 'Local-smoke-' + run;
 const editorName = 'editor_' + run;
 const adminName = 'review_admin';
 const adminPassword = process.env.ARCHIVE_TEST_ADMIN_PASSWORD || 'Review-local-2026-only';
-const key = 'smoke/' + run + '.png';
+const imagePath = process.env.ARCHIVE_TEST_IMAGE;
+const extension = imagePath ? extname(imagePath).slice(1).toLowerCase() : 'png';
+const contentType = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp' }[extension];
+assert.ok(contentType, 'Use a PNG, JPEG, or WebP image for ARCHIVE_TEST_IMAGE.');
+const key = 'smoke/' + run + '.' + extension;
 const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+X3f0AAAAASUVORK5CYII=', 'base64');
+const fixture = imagePath ? await readFile(imagePath) : png;
 let checks = 0;
 
 async function request(path, { method = 'GET', body, cookie, headers = {}, status = 200 } = {}) {
@@ -40,6 +47,7 @@ const deepLink = await request('/batch/2026');
 assert.match(await deepLink.text(), /id="batch-modal"/);
 await request('/admin');
 await request('/api/admin/overview', { status: 401 });
+await request('/api/activities', { status: 410 });
 await request('/api/batches/not-a-year', { status: 404 });
 
 await request('/api/auth/setup', {
@@ -80,7 +88,7 @@ const overview = await (await request('/api/admin/overview', { cookie: admin }))
 const album = overview.batches.find(item => item.id === batch.id).albums[0];
 function uploadForm({ replace = false, valid = true } = {}) {
   const form = new FormData();
-  form.set('file', new File([valid ? png : 'invalid'], 'test.png', { type: 'image/png' }));
+  form.set('file', new File([valid ? fixture : 'invalid'], 'test.' + extension, { type: contentType }));
   form.set('key', key);
   form.set('upload_id', run);
   if (replace) form.set('replace', '1');
@@ -95,33 +103,26 @@ await request('/api/admin/upload', { method: 'POST', cookie: admin, body: upload
 await request('/api/admin/upload', { method: 'POST', cookie: admin, body: uploadForm(), status: 201 });
 await request('/api/admin/upload', { method: 'POST', cookie: admin, body: uploadForm() });
 await request('/media/' + key, { status: 404 });
-const activityFields = { id: album.id, title: 'ألبوم اختبار', published: true };
-await request('/api/admin/albums', {
-  method: 'PATCH', cookie: admin, body: { ...activityFields, is_activity: true }
-});
-const activities = await (await request('/api/activities')).json();
-assert.ok(activities.some(item => item.id === album.id && item.photos.some(photo => photo.url === '/media/' + key)));
-await request('/media/' + key);
-await request('/api/batches/' + year, { status: 404 });
-await request('/api/admin/albums', {
-  method: 'PATCH', cookie: admin, body: { ...activityFields, published: false, is_activity: true }
-});
-assert.ok(!(await (await request('/api/activities')).json()).some(item => item.id === album.id));
-await request('/media/' + key, { status: 404 });
-await request('/api/admin/albums', {
-  method: 'PATCH', cookie: admin, body: { ...activityFields, is_activity: false }
-});
-
 await request('/media/' + key, { cookie: admin });
 await request('/api/admin/batches/' + batch.id, {
-  method: 'PATCH', cookie: admin, body: { ...batchData, cover_key: key, published: true }
+  method: 'PATCH', cookie: admin, body: { ...batchData, published: true }
+});
+const albumFields = { id: album.id, title: 'ألبوم اختبار' };
+await request('/api/admin/albums', {
+  method: 'PATCH', cookie: admin, body: { ...albumFields, published: false }
+});
+assert.deepEqual((await (await request('/api/batches/' + year)).json()).albums, []);
+await request('/media/' + key, { status: 404 });
+await request('/api/admin/albums', {
+  method: 'PATCH', cookie: admin, body: { ...albumFields, published: true }
 });
 const published = await (await request('/api/batches/' + year)).json();
 assert.deepEqual(published.students, ['اسم اختبار منشور']);
 assert.equal(published.albums[0].photos.length, 1);
 assert.equal(published.albums[0].photos[0].caption, 'وصف صورة اختبار');
 const publicPhoto = await request('/media/' + key);
-assert.equal(publicPhoto.headers.get('content-type'), 'image/png');
+assert.equal(publicPhoto.headers.get('content-type'), contentType);
+assert.deepEqual(Buffer.from(await publicPhoto.arrayBuffer()), fixture);
 assert.match(publicPhoto.headers.get('cache-control'), /no-store/);
 await request('/api/admin/upload', { method: 'POST', cookie: admin, body: uploadForm({ replace: true }) });
 assert.equal((await (await request('/api/batches/' + year)).json()).albums[0].photos[0].caption, 'وصف صورة اختبار');
@@ -152,4 +153,5 @@ if (!process.env.ARCHIVE_KEEP_FIXTURES) {
 }
 await request('/api/auth/logout', { method: 'POST', cookie: editor, status: [200, 204] });
 await request('/api/auth/me', { cookie: editor, status: 401 });
+if (process.env.ARCHIVE_KEEP_FIXTURES) console.log('Fixture batch:', year);
 console.log(`Passed ${checks} HTTP checks with D1 and R2.`);

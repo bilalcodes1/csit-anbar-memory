@@ -1,29 +1,7 @@
-.hero-activity-link { display: inline-flex; gap: .55rem; align-items: center; min-height: 44px; color: #f4dfaa; padding-inline: .5rem; }
-.hero-activity-link:hover { text-decoration: underline; }
-#activities { scroll-margin-top: 6rem; }
-.activities-section { padding: clamp(3rem, 7vw, 6rem) 1.25rem; background: #eae4d9; }
-.activities-wrap { max-width: 76rem; margin-inline: auto; }
-.activities-eyebrow { color: var(--teal); font-weight: 700; }
-.activities-wrap h2 { font-size: clamp(1.9rem, 5vw, 3rem); font-weight: 700; }
-.activities-intro { margin-block: .5rem 1rem; color: #334e68; }
-.activity-albums, .activity-photos { display: grid; gap: 1rem; }
-.activity-albums { grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); }
-.activity-card { position: relative; display: grid; align-items: end; overflow: hidden; text-align: start; border-radius: 1.5rem; min-height: 15rem; color: white; background: var(--ink); isolation: isolate; }
-.activity-card img, .activity-card::after { position: absolute; inset: 0; width: 100%; height: 100%; }
-.activity-card img { object-fit: cover; z-index: -2; transition: transform .5s ease; }
-.activity-card::after { content: ""; z-index: -1; background: linear-gradient(0deg, #071521 0%, #102a4322 100%); }
-.activity-card:hover img, .activity-card:focus-visible img { transform: scale(1.06); }
-.activity-card-copy { display: grid; padding: 1.35rem; gap: .2rem; }
-.activity-card strong { font-size: clamp(1rem, 3vw, 1.4rem); }
-.activity-card small { color: #f2dba9; }
-.activity-viewer { margin-block-start: 1.5rem; padding: clamp(.85rem, 3vw, 1.5rem); border-radius: 1.5rem; background: #f7f4ee; }
-.activity-viewer-heading, .photo-toolbar, .photo-navigation { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .65rem; margin-block-end: 1rem; }
-.activity-viewer-heading h3 { font-size: 1.25rem; font-weight: 700; }
-.activity-photos { grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr)); }
+.photo-toolbar, .photo-navigation { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .65rem; margin-block-end: 1rem; }
 .archive-control { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: .4rem .9rem; border-radius: .8rem; background: #eee8da; color: var(--ink); font-weight: 700; }
 .archive-control:hover { background: #e3c98d; }
 .archive-control:disabled { opacity: .55; cursor: default; }
-#activity-more { margin-block-start: 1rem; }
 .photo-thumb { display: block; width: 100%; background: #eae4d9; border-radius: .9rem; overflow: hidden; }
 .photo-thumb img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; transition: transform .4s ease; }
 .photo-thumb:hover img { transform: scale(1.045); }
@@ -43,7 +21,7 @@
 @media (prefers-reduced-motion: no-preference) {
   .hero-intro { animation: archive-enter .75s cubic-bezier(.2,.7,.25,1) both; }
   .hero-collage { animation: archive-enter .85s .08s cubic-bezier(.2,.7,.25,1) both; }
-  #batch-modal[open], #photo-modal[open], .activity-viewer:not([hidden]) { animation: archive-enter .24s ease-out both; }
+  #batch-modal[open], #photo-modal[open] { animation: archive-enter .24s ease-out both; }
 }
 @media (max-width: 420px) {
   header > div { gap: .65rem; }
@@ -52,5 +30,24 @@
   .hero-collage { height: 22rem; }
   .hero-collage > div:nth-child(2) { width: 9rem; height: 12rem; }
   .hero-collage > div:nth-child(3) { width: 11rem; height: 14rem; }
-  .activity-photos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.archive-progress { position: fixed; inset: 0 0 auto; height: 3px; background: #e3c98d; z-index: 45; transform: scaleX(0); transform-origin: right; pointer-events: none; }
+.album-tile[aria-expanded="true"] { outline: 2px solid #a67c36; outline-offset: 3px; }
+#album-images > figure { min-width: 0; }
+#album-viewer { scroll-margin-top: 3rem; }
+#batches [data-filter], #album-close { min-height: 44px; }
+#album-close { min-width: 44px; }
+@media (prefers-reduced-motion: no-preference) {
+  .archive-reveal { animation: archive-enter .55s cubic-bezier(.2,.7,.25,1) backwards; }
+  .year-card.archive-reveal:nth-child(even) { animation-delay: .07s; }
+  #album-viewer:not(.hidden) { animation: archive-enter .26s ease-out both; }
+  .hero-collage > div > img { animation: archive-photo-in .85s cubic-bezier(.2,.7,.25,1) both; }
+  .hero-collage > div:nth-child(2) > img { animation-delay: .12s; }
+  .hero-collage > div:nth-child(3) > img { animation-delay: .24s; }
+  .hero-collage > div:nth-child(4) > img { animation-delay: .36s; }
+}
+@keyframes archive-photo-in {
+  from { opacity: .35; transform: scale(1.07); }
+  to { opacity: 1; transform: scale(1); }
 }
