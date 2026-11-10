@@ -12,8 +12,12 @@
 .photo-stage img { display: block; max-height: 64dvh; max-width: 100%; object-fit: contain; }
 #photo-caption { margin-block: .5rem; }
 .photo-navigation { margin-block: .75rem 0; }
-#batch-modal > div > form { position: sticky; top: .15rem; height: 0; z-index: 2; }
-#modal-close { top: 0; left: 0; min-width: 44px; min-height: 44px; }
+.archive-header > div { gap: .75rem; }
+.archive-header-cta { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; flex-shrink: 0; white-space: nowrap; }
+.archive-brand > span:first-child { flex-shrink: 0; }
+.archive-brand-short { display: none; }
+.batch-modal-toolbar { position: sticky; inset-block-start: 0; z-index: 2; display: flex; justify-content: flex-end; padding-block: .25rem .75rem; background: #f7f4ee; }
+#modal-close { display: grid; place-items: center; width: 44px; height: 44px; }
 @keyframes archive-enter {
   from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: translateY(0); }
@@ -24,9 +28,11 @@
   #batch-modal[open], #photo-modal[open] { animation: archive-enter .24s ease-out both; }
 }
 @media (max-width: 420px) {
-  header > div { gap: .65rem; }
-  header > div > a:last-child { text-align: center; flex-shrink: 0; padding-inline: .55rem; }
-  header > div > a:first-child > span:first-child { flex-shrink: 0; }
+  .archive-header > div { gap: .65rem; padding-block: .65rem; }
+  .archive-header-cta { padding-inline: .75rem; }
+  .archive-brand { gap: .55rem; }
+  .archive-brand-full { display: none; }
+  .archive-brand-short { display: block; color: #d3dbe2; font-size: .75rem; }
   .hero-collage { height: 22rem; }
   .hero-collage > div:nth-child(2) { width: 9rem; height: 12rem; }
   .hero-collage > div:nth-child(3) { width: 11rem; height: 14rem; }

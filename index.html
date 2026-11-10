@@ -49,17 +49,17 @@
   </style>
 </head>
 <body>
-  <header class="fixed top-0 inset-x-0 z-40 border-b border-white/10 bg-[#102a43]/90 text-white backdrop-blur-xl">
+  <header class="archive-header fixed top-0 inset-x-0 z-40 border-b border-white/10 bg-[#102a43]/90 text-white backdrop-blur-xl">
     <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
-      <a href="#top" class="flex items-center gap-3">
+      <a href="#top" class="archive-brand flex items-center gap-3">
         <span class="grid h-11 w-11 place-items-center rounded-2xl bg-[#0b2033] p-1 shadow-lg"><img src="/assets/brand/memory-icon.svg" alt="أيقونة ذاكرة الكلية" class="memory-icon h-full w-full"></span>
-        <span><strong class="block text-lg">ذاكرة الكلية</strong><small class="text-xs text-white/65">كلية علوم الحاسوب وتكنولوجيا المعلومات · جامعة الأنبار</small></span>
+        <span><strong class="block text-lg">ذاكرة الكلية</strong><small class="archive-brand-full text-xs text-white/65">كلية علوم الحاسوب وتكنولوجيا المعلومات · جامعة الأنبار</small><small class="archive-brand-short">جامعة الأنبار</small></span>
       </a>
       <nav class="hidden items-center gap-7 text-sm text-white/75 md:flex">
         <a class="transition hover:text-[#e3c98d]" href="#batches">الدفعات</a>
         <a class="transition hover:text-[#e3c98d]" href="#story">حكايتنا</a>
       </nav>
-      <a href="#batches" class="rounded-full border border-[#e3c98d]/50 px-4 py-2 text-sm text-[#f4dfaa] transition hover:bg-[#c8a96b] hover:text-[#102a43]">استكشف الأرشيف</a>
+      <a href="#batches" class="archive-header-cta rounded-full border border-[#e3c98d]/50 px-4 py-2 text-sm text-[#f4dfaa] transition hover:bg-[#c8a96b] hover:text-[#102a43]">استكشف الأرشيف</a>
     </div>
   </header>
 
@@ -133,8 +133,8 @@
 
   <dialog id="batch-modal" aria-labelledby="detail-title" class="m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto rounded-3xl p-0 shadow-2xl">
     <div class="relative rounded-3xl bg-[#f7f4ee] p-6 md:p-9">
-      <form method="dialog"><button id="modal-close" autofocus aria-label="إغلاق" class="absolute left-5 top-5 rounded-full bg-[#102a43] p-2 text-white transition hover:bg-[#1f6f78]"><i data-lucide="x" class="h-5 w-5" aria-hidden="true">×</i></button></form>
-      <div id="modal-content" class="pt-8"></div>
+      <form method="dialog" class="batch-modal-toolbar"><button id="modal-close" autofocus aria-label="إغلاق" class="rounded-full bg-[#102a43] text-white transition hover:bg-[#1f6f78]"><i data-lucide="x" class="h-5 w-5" aria-hidden="true">×</i></button></form>
+      <div id="modal-content"></div>
     </div>
   </dialog>
   <dialog id="photo-modal" aria-labelledby="photo-title">
