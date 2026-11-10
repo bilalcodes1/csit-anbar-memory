@@ -32,7 +32,6 @@
       <nav class="hidden items-center gap-7 text-sm text-white/75 md:flex">
         <a class="transition hover:text-[#e3c98d]" href="#batches">الدفعات</a>
         <a class="transition hover:text-[#e3c98d]" href="#story">حكايتنا</a>
-        <a class="transition hover:text-[#e3c98d]" href="#qr">بوابة الذكريات</a>
       </nav>
       <a href="#batches" class="rounded-full border border-[#e3c98d]/50 px-4 py-2 text-sm text-[#f4dfaa] transition hover:bg-[#c8a96b] hover:text-[#102a43]">استكشف الأرشيف</a>
     </div>
@@ -98,12 +97,6 @@
       </div>
     </section>
 
-    <section id="qr" class="hero-glow px-5 py-20 text-white lg:px-8">
-      <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-8 text-center md:flex-row md:text-right">
-        <div><p class="mb-3 text-sm font-bold tracking-widest text-[#e3c98d]">بوابة الذكريات</p><h2 class="display text-4xl font-bold">امسح الكود، وابدأ الحكاية.</h2><p class="mt-3 max-w-xl text-white/70">ضع QR Code في منتصف الكلية ليصل كل طالب وزائر إلى أرشيف الدفعات من هاتفه.</p></div>
-        <div class="grid h-36 w-36 shrink-0 place-items-center rounded-2xl bg-white p-3 shadow-2xl"><div class="grid h-full w-full place-items-center rounded-xl border-2 border-dashed border-[#c8a96b] text-center text-xs font-bold text-[#102a43]"><i data-lucide="qr-code" class="mx-auto mb-1 h-12 w-12"></i>QR<br>قريبًا</div></div>
-      </div>
-    </section>
   </main>
 
   <footer class="bg-[#0b2033] px-5 py-8 text-white/60 lg:px-8">
@@ -119,25 +112,25 @@
 
   <script>
     const batches = [
-      { year:'2025', label:'الدفعة الحالية', type:'current', title:'دفعة الأمل والطموح', quote:'نكتب بدايتنا اليوم، ونترك للغد أجمل الأثر.', students:'قريبًا نضيف أسماء الدفعة وصورتها الجماعية.', tone:'from-[#1f6f78] to-[#102a43]' },
-      { year:'2024', label:'دفعة متخرجة', type:'graduated', title:'دفعة العبور', quote:'أربع سنوات صنعت من الزملاء عائلة ومن التعب إنجازًا.', students:'ألبوم الدفعة قيد الإضافة.', tone:'from-[#9b7740] to-[#102a43]' },
-      { year:'2023', label:'دفعة متخرجة', type:'graduated', title:'دفعة الأثر', quote:'في كل زاوية من الكلية ذكرى تحمل أسماءنا.', students:'ألبوم الدفعة قيد الإضافة.', tone:'from-[#356b72] to-[#102a43]' },
-      { year:'2022', label:'دفعة متخرجة', type:'graduated', title:'دفعة البداية', quote:'من هنا بدأت الحكاية، وبقيت الوجوه في الذاكرة.', students:'ألبوم الدفعة قيد الإضافة.', tone:'from-[#8c6b3f] to-[#102a43]' }
+      { year:'2025', label:'الدفعة الحالية', type:'current', title:'دفعة الأمل والطموح', quote:'نكتب بدايتنا اليوم، ونترك للغد أجمل الأثر.', image:'assets/batches/2025.jpg', students:'صورة أرشيفية للمعاينة · الأسماء تضاف لاحقًا.', tone:'from-[#1f6f78] to-[#102a43]' },
+      { year:'2024', label:'دفعة متخرجة', type:'graduated', title:'دفعة العبور', quote:'أربع سنوات صنعت من الزملاء عائلة ومن التعب إنجازًا.', image:'assets/batches/2024.jpg', students:'صورة أرشيفية للمعاينة · الأسماء تضاف لاحقًا.', tone:'from-[#9b7740] to-[#102a43]' },
+      { year:'2023', label:'دفعة متخرجة', type:'graduated', title:'دفعة الأثر', quote:'في كل زاوية من الكلية ذكرى تحمل أسماءنا.', image:'assets/batches/2023.jpg', students:'صورة أرشيفية للمعاينة · الأسماء تضاف لاحقًا.', tone:'from-[#356b72] to-[#102a43]' },
+      { year:'2022', label:'دفعة متخرجة', type:'graduated', title:'دفعة البداية', quote:'من هنا بدأت الحكاية، وبقيت الوجوه في الذاكرة.', image:'assets/batches/2022.jpg', students:'صورة أرشيفية للمعاينة · الأسماء تضاف لاحقًا.', tone:'from-[#8c6b3f] to-[#102a43]' }
     ];
     const grid = document.getElementById('batch-grid');
     const modal = document.getElementById('batch-modal');
     const modalContent = document.getElementById('modal-content');
     function renderBatches(filter='all') {
       grid.innerHTML = batches.filter(b => filter==='all' || b.type===filter).map((b, i) => `
-        <article class="year-card relative overflow-hidden rounded-3xl bg-white shadow-lg" data-type="${b.type}">
-          <div class="bg-gradient-to-br ${b.tone} p-6 text-white"><div class="flex items-start justify-between"><span class="rounded-full border border-white/25 px-3 py-1 text-xs">${b.label}</span><span class="display text-5xl font-bold text-[#e3c98d]">${b.year}</span></div><div class="mt-14"><i data-lucide="camera" class="mb-4 h-7 w-7 text-[#e3c98d]"></i><h3 class="display text-2xl font-bold">${b.title}</h3><p class="mt-2 text-sm text-white/70">${b.quote}</p></div></div>
+        <article class="year-card group relative overflow-hidden rounded-3xl bg-white shadow-lg" data-type="${b.type}">
+          <div class="relative h-64 overflow-hidden bg-gradient-to-br ${b.tone}"><img src="${b.image}" alt="${b.title}" class="h-full w-full object-cover opacity-75 transition duration-500 group-hover:scale-105"><div class="absolute inset-0 bg-gradient-to-t from-[#102a43]/95 via-[#102a43]/30 to-transparent"></div><div class="absolute inset-x-6 top-6 flex items-start justify-between text-white"><span class="rounded-full border border-white/25 bg-black/10 px-3 py-1 text-xs">${b.label}</span><span class="display text-5xl font-bold text-[#e3c98d]">${b.year}</span></div><div class="absolute inset-x-6 bottom-6 text-white"><i data-lucide="camera" class="mb-3 h-7 w-7 text-[#e3c98d]"></i><h3 class="display text-2xl font-bold">${b.title}</h3><p class="mt-2 text-sm text-white/75">${b.quote}</p></div></div>
           <div class="flex items-center justify-between p-5"><span class="text-sm text-slate-500">${b.students}</span><button onclick="openBatch('${b.year}')" class="inline-flex items-center gap-2 rounded-full bg-[#eee8da] px-4 py-2 text-sm font-bold text-[#102a43] transition hover:bg-[#c8a96b]">التفاصيل <i data-lucide="arrow-left" class="h-4 w-4"></i></button></div>
         </article>`).join('');
       lucide.createIcons();
     }
     function openBatch(year) {
       const b = batches.find(item => item.year===year);
-      modalContent.innerHTML = `<p class="text-sm font-bold tracking-widest text-[#1f6f78]">${b.label}</p><h2 class="display mt-3 text-4xl font-bold text-[#102a43]">${b.title}</h2><div class="mt-7 rounded-2xl bg-gradient-to-br ${b.tone} p-8 text-white"><span class="display text-7xl font-bold text-[#e3c98d]">${b.year}</span><p class="mt-8 text-xl leading-loose">${b.quote}</p></div><div class="mt-6 grid gap-3 sm:grid-cols-2"><div class="rounded-2xl bg-white p-5"><i data-lucide="users" class="mb-3 h-5 w-5 text-[#1f6f78]"></i><strong class="block">أسماء الطلبة</strong><span class="text-sm text-slate-500">${b.students}</span></div><div class="rounded-2xl bg-white p-5"><i data-lucide="image" class="mb-3 h-5 w-5 text-[#c1984e]"></i><strong class="block">الصورة الجماعية</strong><span class="text-sm text-slate-500">ستظهر هنا عند إضافتها.</span></div></div>`;
+      modalContent.innerHTML = `<p class="text-sm font-bold tracking-widest text-[#1f6f78]">${b.label}</p><h2 class="display mt-3 text-4xl font-bold text-[#102a43]">${b.title}</h2><img src="${b.image}" alt="${b.title}" class="mt-7 max-h-[28rem] w-full rounded-2xl object-cover shadow-lg"><div class="mt-7 rounded-2xl bg-gradient-to-br ${b.tone} p-8 text-white"><span class="display text-7xl font-bold text-[#e3c98d]">${b.year}</span><p class="mt-8 text-xl leading-loose">${b.quote}</p></div><div class="mt-6 grid gap-3 sm:grid-cols-2"><div class="rounded-2xl bg-white p-5"><i data-lucide="users" class="mb-3 h-5 w-5 text-[#1f6f78]"></i><strong class="block">أسماء الطلبة</strong><span class="text-sm text-slate-500">${b.students}</span></div><div class="rounded-2xl bg-white p-5"><i data-lucide="image" class="mb-3 h-5 w-5 text-[#c1984e]"></i><strong class="block">الصورة الجماعية</strong><span class="text-sm text-slate-500">الصورة المعروضة معاينة مؤقتة إلى حين إضافة صورة الدفعة.</span></div></div>`;
       modal.classList.remove('hidden'); modal.classList.add('flex'); document.body.classList.add('modal-open'); lucide.createIcons();
     }
     function closeBatch() { modal.classList.add('hidden'); modal.classList.remove('flex'); document.body.classList.remove('modal-open'); }
