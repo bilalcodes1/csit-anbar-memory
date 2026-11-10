@@ -1,0 +1,37 @@
+[
+  {
+    "year": 2026,
+    "title": "دفعة الأمل والطموح",
+    "status": "current",
+    "quote": "نكتب بدايتنا اليوم، ونترك للغد أجمل الأثر.",
+    "description": "دفعة حالية من كلية علوم الحاسوب وتكنولوجيا المعلومات.",
+    "cover": "assets/batches/2026.jpg",
+    "albums": [
+      {"slug": "group", "title": "صورة الدفعة", "subtitle": "اللحظة التي جمعتنا", "cover": "assets/batches/2026.jpg"},
+      {"slug": "activities", "title": "أنشطة وفعاليات", "subtitle": "أيام صنعت الذكرى", "cover": "assets/batches/2025.jpg"},
+      {"slug": "campus", "title": "في أروقة الكلية", "subtitle": "أماكن تحفظ خطانا", "cover": "assets/batches/2024.jpg"},
+      {"slug": "graduation", "title": "لحظات التخرج", "subtitle": "نهاية فصل وبداية طريق", "cover": "assets/batches/2023.jpg"}
+    ]
+  },
+  {
+    "year": 2024,
+    "title": "دفعة العبور",
+    "status": "graduated",
+    "quote": "أربع سنوات صنعت من الزملاء عائلة ومن التعب إنجازًا.",
+    "cover": "assets/batches/2024.jpg"
+  },
+  {
+    "year": 2023,
+    "title": "دفعة الأثر",
+    "status": "graduated",
+    "quote": "في كل زاوية من الكلية ذكرى تحمل أسماءنا.",
+    "cover": "assets/batches/2023.jpg"
+  },
+  {
+    "year": 2022,
+    "title": "دفعة البداية",
+    "status": "graduated",
+    "quote": "من هنا بدأت الحكاية، وبقيت الوجوه في الذاكرة.",
+    "cover": "assets/batches/2022.jpg"
+  }
+]

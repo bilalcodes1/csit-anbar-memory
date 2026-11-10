@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>إدارة ذاكرة الكلية</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-[#f7f4ee] text-[#102a43]">
+  <main class="mx-auto max-w-3xl px-5 py-10">
+    <header class="mb-8">
+      <p class="text-sm font-bold tracking-widest text-[#1f6f78]">ذاكرة الكلية</p>
+      <h1 class="mt-2 text-4xl font-bold">لوحة إدارة الأرشيف</h1>
+      <p class="mt-3 leading-loose text-slate-600">أضف الدفعات والصور بعد اعتماد المحتوى وموافقات النشر.</p>
+    </header>
+    <section class="rounded-3xl bg-white p-6 shadow-xl">
+      <label class="block text-sm font-bold">رمز الإدارة</label>
+      <input id="token" type="password" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="يُحفظ في هذه الصفحة فقط">
+      <form id="batch-form" class="mt-8 grid gap-4">
+        <div class="grid gap-4 sm:grid-cols-2">
+          <label class="text-sm font-bold">السنة<input name="year" type="number" min="2000" max="2100" required class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3"></label>
+          <label class="text-sm font-bold">حالة الدفعة<select name="status" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3"><option value="current">حالية</option><option value="graduated">متخرجة</option></select></label>
+        </div>
+        <label class="text-sm font-bold">عنوان الدفعة<input name="title" required class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="مثال: دفعة العبور"></label>
+        <label class="text-sm font-bold">الاقتباس<textarea name="quote" rows="2" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3"></textarea></label>
+        <label class="text-sm font-bold">الوصف<textarea name="description" rows="3" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3"></textarea></label>
+        <label class="flex items-center gap-2 text-sm"><input name="published" type="checkbox"> نشر الدفعة مباشرة</label>
+        <button class="rounded-full bg-[#102a43] px-5 py-3 font-bold text-white transition hover:bg-[#1f6f78]">حفظ الدفعة</button>
+      </form>
+      <p id="result" class="mt-5 hidden rounded-xl p-4 text-sm"></p>
+    </section>
+  </main>
+  <script>
+    const form = document.getElementById('batch-form');
+    const result = document.getElementById('result');
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      const payload = Object.fromEntries(new FormData(form));
+      payload.published = form.published.checked;
+      try {
+        const response = await fetch('/api/admin/batches', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${document.getElementById('token').value}` },
+          body: JSON.stringify(payload)
+        });
+        const body = await response.json();
+        result.textContent = response.ok ? 'تم حفظ الدفعة بنجاح.' : (body.error || 'تعذر حفظ الدفعة.');
+        result.className = `mt-5 rounded-xl p-4 text-sm ${response.ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`;
+      } catch {
+        result.textContent = 'تعذر الاتصال بالخادم.';
+        result.className = 'mt-5 rounded-xl bg-red-50 p-4 text-sm text-red-700';
+      }
+    });
+  </script>
+</body>
+</html>
