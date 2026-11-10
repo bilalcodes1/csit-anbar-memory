@@ -9,31 +9,45 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
-    :root { --ink:#102a43; --gold:#c8a96b; --cream:#f7f4ee; --teal:#1f6f78; }
+    :root { --ink:#28104f; --gold:#ffbf19; --cream:#fbf8ff; --teal:#00b8d9; --pink:#ef2b78; --violet:#6426c8; }
     html { scroll-behavior:smooth; }
-    body { font-family:'IBM Plex Sans Arabic',sans-serif; background:var(--cream); color:var(--ink); }
+    body { font-family:'IBM Plex Sans Arabic',sans-serif; background:var(--cream); color:var(--ink); overflow-x:hidden; }
     .display { font-family:'Playfair Display','IBM Plex Sans Arabic',serif; }
-    .grain { background-image:radial-gradient(rgba(16,42,67,.08) .7px, transparent .7px); background-size:12px 12px; }
-    .hero-glow { background:radial-gradient(circle at 75% 15%,rgba(200,169,107,.26),transparent 30%),linear-gradient(135deg,#102a43 0%,#174b60 55%,#1f6f78 100%); }
+    .grain { background-image:radial-gradient(rgba(40,16,79,.09) .7px, transparent .7px); background-size:12px 12px; }
+    .hero-glow { background:radial-gradient(circle at 78% 12%,rgba(255,191,25,.38),transparent 25%),radial-gradient(circle at 10% 85%,rgba(239,43,120,.35),transparent 30%),linear-gradient(135deg,#210b43 0%,#41208a 48%,#007fbb 100%); }
     .glass { background:rgba(255,255,255,.72); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,.7); }
     .timeline-line { background:linear-gradient(to bottom,transparent,var(--gold) 8%,var(--gold) 92%,transparent); }
     .year-card { transition:transform .25s ease, box-shadow .25s ease; }
     .year-card:hover { transform:translateY(-6px); box-shadow:0 24px 50px rgba(16,42,67,.14); }
+    .map-surface { background:radial-gradient(circle at 50% 40%,rgba(0,184,217,.25),transparent 35%),radial-gradient(circle at 10% 100%,rgba(239,43,120,.2),transparent 32%),linear-gradient(145deg,#100626,#28104f 70%,#063a68); }
+    .memory-node { transition:transform .25s ease, box-shadow .25s ease; }
+    .memory-node:hover { transform:scale(1.08); box-shadow:0 0 0 10px rgba(125,226,178,.1),0 0 30px rgba(125,226,178,.55); }
+    .memory-line { stroke-dasharray:5 10; animation:flow 12s linear infinite; }
+    .reveal { animation:reveal .8s both; }
+    .float { animation:float 5s ease-in-out infinite; }
+    .pulse-ring { animation:pulse-ring 2.4s ease-out infinite; }
+    .logo-glow { filter:drop-shadow(0 15px 25px rgba(255,191,25,.25)); }
+    .gradient-text { background:linear-gradient(90deg,#ffbf19,#ff6d8f,#7ee9ff); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    @keyframes reveal { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:none; } }
+    @keyframes float { 0%,100% { transform:translateY(0) rotate(-2deg); } 50% { transform:translateY(-12px) rotate(2deg); } }
+    @keyframes pulse-ring { 0% { box-shadow:0 0 0 0 rgba(125,233,255,.5); } 70% { box-shadow:0 0 0 18px rgba(125,233,255,0); } 100% { box-shadow:0 0 0 0 rgba(125,233,255,0); } }
+    @keyframes flow { to { stroke-dashoffset:-180; } }
     .modal-open { overflow:hidden; }
   </style>
 </head>
 <body>
-  <header class="fixed top-0 inset-x-0 z-40 border-b border-white/10 bg-[#102a43]/90 text-white backdrop-blur-xl">
+  <header class="fixed top-0 inset-x-0 z-40 border-b border-white/10 bg-[#210b43]/85 text-white backdrop-blur-xl">
     <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
       <a href="#top" class="flex items-center gap-3">
-        <span class="grid h-11 w-11 place-items-center rounded-2xl bg-[#c8a96b] text-[#102a43] shadow-lg"><i data-lucide="book-open" class="h-5 w-5"></i></span>
-        <span><strong class="block text-lg">ذاكرة الكلية</strong><small class="text-xs text-white/65">CSIT · University of Anbar</small></span>
+        <span class="grid h-11 w-11 place-items-center overflow-hidden rounded-2xl bg-white shadow-lg"><img src="assets/brand/college-memory-logo.png" alt="شعار ذاكرة الكلية" class="h-full w-full object-contain"></span>
+        <span><strong class="block text-lg">ذاكرة الكلية</strong><small class="text-xs text-white/65">College Memory · CSIT</small></span>
       </a>
       <nav class="hidden items-center gap-7 text-sm text-white/75 md:flex">
         <a class="transition hover:text-[#e3c98d]" href="#batches">الدفعات</a>
+        <a class="transition hover:text-[#e3c98d]" href="#map">خريطة الذكريات</a>
         <a class="transition hover:text-[#e3c98d]" href="#story">حكايتنا</a>
       </nav>
-      <a href="#batches" class="rounded-full border border-[#e3c98d]/50 px-4 py-2 text-sm text-[#f4dfaa] transition hover:bg-[#c8a96b] hover:text-[#102a43]">استكشف الأرشيف</a>
+      <a href="#batches" class="rounded-full bg-gradient-to-l from-[#ffbf19] to-[#ff6d8f] px-4 py-2 text-sm font-bold text-[#28104f] shadow-lg shadow-[#ef2b78]/20 transition hover:-translate-y-0.5">استكشف الأرشيف</a>
     </div>
   </header>
 
@@ -41,23 +55,23 @@
     <section class="hero-glow relative overflow-hidden px-5 pb-20 pt-36 text-white lg:px-8 lg:pb-28">
       <div class="absolute -left-20 top-28 h-72 w-72 rounded-full border border-[#e3c98d]/25"></div>
       <div class="absolute -left-8 top-44 h-44 w-44 rounded-full border border-[#e3c98d]/20"></div>
-      <div class="mx-auto grid max-w-7xl items-end gap-12 lg:grid-cols-[1.05fr_.95fr]">
-        <div class="max-w-3xl">
-          <p class="mb-5 flex items-center gap-3 text-sm font-semibold tracking-widest text-[#e3c98d]"><span class="h-px w-10 bg-[#e3c98d]"></span>أرشيف الذكريات · منذ أول دفعة</p>
-          <h1 class="display text-5xl font-bold leading-[1.2] md:text-7xl">كل دفعة<br><span class="text-[#e3c98d]">فصلٌ من الحكاية.</span></h1>
-          <p class="mt-7 max-w-xl text-lg leading-loose text-white/75 md:text-xl">مساحة تحفظ صور دفعات كلية علوم الحاسوب وتكنولوجيا المعلومات، وتوصل حكايات من سبقونا بمن سيكملون الطريق.</p>
+      <div class="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1.05fr_.95fr]">
+        <div class="reveal max-w-3xl">
+          <p class="mb-5 flex items-center gap-3 text-sm font-semibold tracking-widest text-[#7ee9ff]"><span class="h-px w-10 bg-[#7ee9ff]"></span>COLLEGE MEMORY · DIGITAL YEARBOOK</p>
+          <h1 class="display text-5xl font-bold leading-[1.2] md:text-7xl">كل دفعة<br><span class="gradient-text">فصلٌ من الحكاية.</span></h1>
+          <p class="mt-7 max-w-xl text-lg leading-loose text-white/75 md:text-xl">Yearbook رقمي وخريطة تحفظ صور دفعات كلية علوم الحاسوب وتكنولوجيا المعلومات، وتوصل حكايات من سبقونا بمن سيكملون الطريق.</p>
           <div class="mt-9 flex flex-wrap gap-3">
-            <a href="#batches" class="inline-flex items-center gap-2 rounded-full bg-[#c8a96b] px-6 py-3 font-bold text-[#102a43] shadow-xl shadow-black/15 transition hover:-translate-y-1 hover:bg-[#e3c98d]">ابدأ الرحلة <i data-lucide="arrow-left" class="h-5 w-5"></i></a>
+            <a href="#batches" class="inline-flex items-center gap-2 rounded-full bg-gradient-to-l from-[#ffbf19] to-[#ff6d8f] px-6 py-3 font-bold text-[#28104f] shadow-xl shadow-black/15 transition hover:-translate-y-1">ابدأ الرحلة <i data-lucide="arrow-left" class="h-5 w-5"></i></a>
+            <a href="#map" class="inline-flex items-center gap-2 rounded-full border border-[#7ee9ff]/45 px-6 py-3 font-semibold text-[#c5f6ff] transition hover:bg-[#7ee9ff]/10">خريطة الذكريات <i data-lucide="map" class="h-5 w-5"></i></a>
             <a href="#story" class="inline-flex items-center gap-2 rounded-full border border-white/25 px-6 py-3 font-semibold text-white/90 transition hover:bg-white/10">عن الفكرة <i data-lucide="sparkles" class="h-5 w-5"></i></a>
           </div>
         </div>
-        <div class="relative mx-auto w-full max-w-md">
-          <div class="absolute -inset-5 rounded-[2rem] border border-[#e3c98d]/30"></div>
-          <div class="relative overflow-hidden rounded-[2rem] border border-white/20 bg-white/10 p-3 shadow-2xl backdrop-blur-sm">
-            <div class="grain flex aspect-[4/5] flex-col justify-between rounded-[1.4rem] bg-[#eee8da] p-6 text-[#102a43]">
-              <div class="flex items-center justify-between"><span class="text-xs font-bold tracking-widest text-[#1f6f78]">COLLEGE ARCHIVE</span><i data-lucide="quote" class="h-7 w-7 text-[#c8a96b]"></i></div>
-              <div><p class="display text-4xl font-bold leading-tight">من هنا<br>بدأت الحكاية.</p><div class="mt-6 h-1 w-16 bg-[#c8a96b]"></div></div>
-              <div class="flex items-end justify-between text-sm"><span>كلية علوم الحاسوب<br>وتكنولوجيا المعلومات</span><span class="text-left text-[#1f6f78]">جامعة<br>الأنبار</span></div>
+        <div class="float relative mx-auto w-full max-w-md">
+          <div class="absolute -inset-8 rounded-[3rem] border border-[#7ee9ff]/20"></div>
+          <div class="relative overflow-hidden rounded-[2.4rem] border border-white/20 bg-white/10 p-3 shadow-2xl backdrop-blur-sm">
+            <div class="grain flex aspect-square flex-col items-center justify-center rounded-[1.8rem] bg-white p-7 text-center shadow-inner">
+              <img src="assets/brand/college-memory-logo.png" alt="ذاكرة الكلية" class="logo-glow w-4/5 max-w-[19rem] rounded-3xl">
+              <p class="mt-4 text-sm font-bold tracking-[.25em] text-[#6426c8]">EVERY MEMORY MATTERS</p>
             </div>
           </div>
         </div>
@@ -90,9 +104,44 @@
       </div>
     </section>
 
+    <section id="map" class="map-surface overflow-hidden px-5 py-24 text-white lg:px-8">
+      <div class="mx-auto max-w-7xl">
+        <div class="mb-10 flex flex-col justify-between gap-5 md:flex-row md:items-end">
+          <div><p class="mb-3 text-sm font-bold tracking-widest text-[#7de2b2]">PHOTO MAP · YEARBOOK</p><h2 class="display text-4xl font-bold md:text-5xl">خريطة الذكريات</h2><p class="mt-4 max-w-2xl leading-loose text-white/65">كل نقطة هنا تمثل سنة، دفعة، أو لحظة. اختر مسارًا واستكشف كيف امتدت حكاية الكلية من جيل إلى جيل.</p></div>
+          <span class="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/60">اسحب لاستكشاف الحكاية</span>
+        </div>
+        <div class="grid gap-8 lg:grid-cols-[1.4fr_.6fr]">
+          <div class="relative min-h-[30rem] overflow-hidden rounded-[2rem] border border-white/10 bg-[#05090c]/70 p-5 shadow-2xl md:p-8" id="memory-map">
+            <svg class="absolute inset-0 h-full w-full" viewBox="0 0 800 520" preserveAspectRatio="none" aria-hidden="true">
+              <path class="memory-line" d="M75 125 C210 45 255 245 390 170 S580 85 710 145" fill="none" stroke="#7de2b2" stroke-opacity=".42" stroke-width="1.5"/>
+              <path class="memory-line" d="M110 410 C240 300 280 450 390 300 S580 300 690 390" fill="none" stroke="#c8a96b" stroke-opacity=".42" stroke-width="1.5"/>
+              <path class="memory-line" d="M390 170 C410 225 390 245 390 300" fill="none" stroke="#f2ebdd" stroke-opacity=".2" stroke-width="1"/>
+            </svg>
+            <div class="relative flex min-h-[27rem] items-center justify-center">
+              <button class="memory-node pulse-ring absolute left-[7%] top-[15%] h-16 w-16 overflow-hidden rounded-full border-2 border-[#7de2b2] bg-[#102a43] shadow-[0_0_24px_rgba(125,226,178,.45)]" data-memory="2022"><img src="assets/batches/2022.jpg" alt="ذكريات دفعة 2022" class="h-full w-full object-cover"></button>
+              <button class="memory-node pulse-ring absolute left-[42%] top-[28%] h-24 w-24 overflow-hidden rounded-full border-2 border-[#c8a96b] bg-[#102a43] shadow-[0_0_28px_rgba(200,169,107,.45)]" data-memory="2024"><img src="assets/batches/2024.jpg" alt="ذكريات دفعة 2024" class="h-full w-full object-cover"></button>
+              <button class="memory-node absolute right-[8%] top-[17%] h-16 w-16 overflow-hidden rounded-full border-2 border-white/70 bg-[#102a43]" data-memory="2025"><img src="assets/batches/2025.jpg" alt="ذكريات دفعة 2025" class="h-full w-full object-cover"></button>
+              <button class="memory-node absolute left-[17%] bottom-[10%] h-14 w-14 overflow-hidden rounded-full border-2 border-white/60 bg-[#102a43]" data-memory="2023"><img src="assets/batches/2023.jpg" alt="ذكريات دفعة 2023" class="h-full w-full object-cover"></button>
+              <button class="memory-node absolute right-[18%] bottom-[14%] h-20 w-20 overflow-hidden rounded-full border-2 border-[#7de2b2]/80 bg-[#102a43]" data-memory="2024"><img src="assets/batches/2024.jpg" alt="صورة من ذكريات 2024" class="h-full w-full object-cover"></button>
+              <div class="pointer-events-none absolute bottom-4 right-4 rounded-full border border-white/10 bg-black/20 px-3 py-2 text-xs text-white/55">4 دفعات · 5 نقاط ذاكرة</div>
+            </div>
+          </div>
+          <aside class="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+            <p class="text-xs font-bold tracking-widest text-[#7de2b2]">MEMORY SELECTED</p>
+            <div id="memory-detail" class="mt-6">
+              <span class="display text-7xl font-bold text-[#e3c98d]">2024</span>
+              <h3 class="mt-4 text-2xl font-bold">دفعة العبور</h3>
+              <p class="mt-4 leading-loose text-white/65">أربع سنوات صنعت من الزملاء عائلة ومن التعب إنجازًا. اختر أي نقطة حتى تفتح صفحة الدفعة وتكمل القصة.</p>
+              <button data-memory-open="2024" class="mt-7 inline-flex items-center gap-2 rounded-full bg-[#7de2b2] px-5 py-3 font-bold text-[#071521] transition hover:bg-[#b8f5d6]">فتح صفحة الدفعة <i data-lucide="arrow-left" class="h-4 w-4"></i></button>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
     <section id="story" class="bg-white px-5 py-24 lg:px-8">
       <div class="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-2">
-        <div><p class="mb-3 text-sm font-bold tracking-widest text-[#1f6f78]">لماذا هذا الأرشيف؟</p><h2 class="display text-4xl font-bold leading-tight text-[#102a43] md:text-5xl">الصورة تحفظ لحظة،<br><span class="text-[#c1984e]">والذكرى تحفظ عمرًا.</span></h2><p class="mt-6 max-w-xl text-lg leading-loose text-slate-600">كل صورة جماعية تختصر سنوات من التعب، الصداقة، المحاضرات، والمواقف التي صنعت وجوهًا ستبقى جزءًا من تاريخ الكلية. هذا الموقع هو دفترنا المفتوح للأجيال القادمة.</p><div class="mt-8 grid gap-4 sm:grid-cols-2"><div class="glass rounded-2xl p-5"><i data-lucide="heart-handshake" class="mb-3 h-6 w-6 text-[#1f6f78]"></i><strong class="block">ذاكرة مشتركة</strong><span class="text-sm text-slate-500">نوثق اللحظة باسم أصحابها.</span></div><div class="glass rounded-2xl p-5"><i data-lucide="footprints" class="mb-3 h-6 w-6 text-[#c1984e]"></i><strong class="block">أثر مستمر</strong><span class="text-sm text-slate-500">يلهم الدفعات التي تأتي بعدنا.</span></div></div></div>
+        <div><p class="mb-3 text-sm font-bold tracking-widest text-[#1f6f78]">YEARBOOK DIGITAL</p><h2 class="display text-4xl font-bold leading-tight text-[#102a43] md:text-5xl">الصورة تحفظ لحظة،<br><span class="text-[#c1984e]">والذكرى تحفظ عمرًا.</span></h2><p class="mt-6 max-w-xl text-lg leading-loose text-slate-600">كل دفعة لها غلافها، صورها، أسماؤها وأحداثها. نريد أن يكون هذا الأرشيف دفترًا رقميًا مفتوحًا، يعود إليه الخريج بعد سنوات وتكتشفه الدفعة التي تأتي بعده.</p><div class="mt-8 grid gap-4 sm:grid-cols-2"><div class="glass rounded-2xl p-5"><i data-lucide="book-open-check" class="mb-3 h-6 w-6 text-[#1f6f78]"></i><strong class="block">Yearbook لكل دفعة</strong><span class="text-sm text-slate-500">غلاف، أسماء، صور، وأحداث.</span></div><div class="glass rounded-2xl p-5"><i data-lucide="network" class="mb-3 h-6 w-6 text-[#c1984e]"></i><strong class="block">ذكريات مترابطة</strong><span class="text-sm text-slate-500">كل سنة تقود إلى السنة التي بعدها.</span></div></div></div>
         <div class="relative"><div class="absolute -inset-4 rounded-[2rem] bg-[#e7dfd0]"></div><div class="relative rounded-[1.5rem] bg-[#102a43] p-8 text-white shadow-2xl"><i data-lucide="quote" class="h-10 w-10 text-[#e3c98d]"></i><p class="display mt-8 text-3xl leading-relaxed">لسنا أرقامًا في قوائم، نحن حكايات تركت أثرًا في هذا المكان.</p><div class="mt-10 flex items-center justify-between border-t border-white/15 pt-5 text-sm text-white/60"><span>ذاكرة الكلية</span><span>CSIT · 2025</span></div></div></div>
       </div>
     </section>
@@ -122,7 +171,7 @@
     const modalContent = document.getElementById('modal-content');
     function renderBatches(filter='all') {
       grid.innerHTML = batches.filter(b => filter==='all' || b.type===filter).map((b, i) => `
-        <article class="year-card group relative overflow-hidden rounded-3xl bg-white shadow-lg" data-type="${b.type}">
+        <article class="year-card reveal group relative overflow-hidden rounded-3xl bg-white shadow-lg" data-type="${b.type}">
           <div class="relative h-64 overflow-hidden bg-gradient-to-br ${b.tone}"><img src="${b.image}" alt="${b.title}" class="h-full w-full object-cover opacity-75 transition duration-500 group-hover:scale-105"><div class="absolute inset-0 bg-gradient-to-t from-[#102a43]/95 via-[#102a43]/30 to-transparent"></div><div class="absolute inset-x-6 top-6 flex items-start justify-between text-white"><span class="rounded-full border border-white/25 bg-black/10 px-3 py-1 text-xs">${b.label}</span><span class="display text-5xl font-bold text-[#e3c98d]">${b.year}</span></div><div class="absolute inset-x-6 bottom-6 text-white"><i data-lucide="camera" class="mb-3 h-7 w-7 text-[#e3c98d]"></i><h3 class="display text-2xl font-bold">${b.title}</h3><p class="mt-2 text-sm text-white/75">${b.quote}</p></div></div>
           <div class="flex items-center justify-between p-5"><span class="text-sm text-slate-500">${b.students}</span><button onclick="openBatch('${b.year}')" class="inline-flex items-center gap-2 rounded-full bg-[#eee8da] px-4 py-2 text-sm font-bold text-[#102a43] transition hover:bg-[#c8a96b]">التفاصيل <i data-lucide="arrow-left" class="h-4 w-4"></i></button></div>
         </article>`).join('');
@@ -137,7 +186,20 @@
     document.getElementById('modal-close').addEventListener('click', closeBatch);
     modal.addEventListener('click', e => { if (e.target===modal) closeBatch(); });
     document.addEventListener('keydown', e => { if (e.key==='Escape') closeBatch(); });
+    const memoryDetail = document.getElementById('memory-detail');
+    function selectMemory(year) {
+      const b = batches.find(item => item.year===year);
+      if (!b) return;
+      memoryDetail.innerHTML = `<span class="display text-7xl font-bold text-[#e3c98d]">${b.year}</span><h3 class="mt-4 text-2xl font-bold">${b.title}</h3><p class="mt-4 leading-loose text-white/65">${b.quote}</p><button data-memory-open="${b.year}" class="mt-7 inline-flex items-center gap-2 rounded-full bg-[#7de2b2] px-5 py-3 font-bold text-[#071521] transition hover:bg-[#b8f5d6]">فتح صفحة الدفعة <i data-lucide="arrow-left" class="h-4 w-4"></i></button>`;
+      memoryDetail.querySelector('[data-memory-open]').addEventListener('click', () => openBatch(year));
+      lucide.createIcons();
+    }
+    document.querySelectorAll('.memory-node').forEach(node => node.addEventListener('click', () => selectMemory(node.dataset.memory)));
     document.querySelectorAll('.filter-btn').forEach(button => button.addEventListener('click', () => { document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('bg-[#102a43]','text-white')); document.querySelectorAll('.filter-btn').forEach(b=>b.classList.add('text-slate-500')); button.classList.add('bg-[#102a43]','text-white'); button.classList.remove('text-slate-500'); renderBatches(button.dataset.filter); }));
+    const revealObserver = new IntersectionObserver(entries => entries.forEach(entry => { if (entry.isIntersecting) { entry.target.style.animationDelay = `${Math.min(entry.target.dataset.delay || 0, 360)}ms`; entry.target.classList.add('reveal'); revealObserver.unobserve(entry.target); } }), { threshold:.12 });
+    document.querySelectorAll('section, .year-card, #memory-detail').forEach((element, index) => { element.dataset.delay = (index % 5) * 70; revealObserver.observe(element); });
+    document.querySelectorAll('.year-card').forEach(card => card.addEventListener('pointermove', event => { const rect = card.getBoundingClientRect(); const x = (event.clientX - rect.left) / rect.width - .5; const y = (event.clientY - rect.top) / rect.height - .5; card.style.transform = `perspective(900px) rotateY(${x * 4}deg) rotateX(${y * -4}deg) translateY(-6px)`; }));
+    document.querySelectorAll('.year-card').forEach(card => card.addEventListener('pointerleave', () => { card.style.transform = ''; }));
     renderBatches();
     lucide.createIcons();
   </script>
