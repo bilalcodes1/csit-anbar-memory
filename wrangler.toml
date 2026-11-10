@@ -5,7 +5,7 @@ pages_build_output_dir = "."
 [[d1_databases]]
 binding = "DB"
 database_name = "csit-anbar-memory"
-database_id = "REPLACE_WITH_CLOUDFLARE_D1_DATABASE_ID"
+database_id = "fb2af478-abb7-4e6b-9ec3-d246882ccc2a"
 migrations_dir = "migrations"
 
 [[r2_buckets]]

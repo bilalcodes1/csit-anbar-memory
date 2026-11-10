@@ -32,8 +32,38 @@ export async function onRequestPatch({ request, env }) {
   const payload = await request.json();
   const id = Number(payload.id);
   if (!Number.isInteger(id) || id === auth.session.user_id) return Response.json({ error: "لا يمكن تعديل هذا الحساب" }, { status: 422 });
-  await env.DB.prepare("UPDATE users SET active = ?, role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
-    .bind(payload.active ? 1 : 0, payload.role === "admin" ? "admin" : "editor", id).run();
+  const existing = await env.DB.prepare("SELECT id, name, role, active FROM users WHERE id = ?").bind(id).first();
+  if (!existing) return Response.json({ error: "الحساب غير موجود" }, { status: 404 });
+  const name = payload.name === undefined ? existing.name : String(payload.name || "").trim();
+  const role = payload.role === undefined ? existing.role : (payload.role === "admin" ? "admin" : "editor");
+  const active = payload.active === undefined ? existing.active : (payload.active ? 1 : 0);
+  if (name.length < 2) return Response.json({ error: "الاسم مطلوب" }, { status: 422 });
+  if (payload.password !== undefined && String(payload.password).length > 0 && String(payload.password).length < 12) {
+    return Response.json({ error: "كلمة المرور يجب ألا تقل عن 12 رمزًا" }, { status: 422 });
+  }
+  if (payload.password !== undefined && String(payload.password).length > 0) {
+    await env.DB.prepare("UPDATE users SET name = ?, password_hash = ?, active = ?, role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+      .bind(name, await hashPassword(String(payload.password)), active, role, id).run();
+  } else {
+    await env.DB.prepare("UPDATE users SET name = ?, active = ?, role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+      .bind(name, active, role, id).run();
+  }
   await audit(env, auth.session, "update", "user", id, payload);
+  return Response.json({ ok: true });
+}
+
+export async function onRequestDelete({ request, env }) {
+  const auth = await requireUser(request, env, true);
+  if (auth.response) return auth.response;
+  let payload;
+  try { payload = await request.json(); } catch { return Response.json({ error: "بيانات غير صالحة" }, { status: 400 }); }
+  const id = Number(payload.id);
+  if (!Number.isInteger(id) || id < 1 || id === auth.session.user_id) {
+    return Response.json({ error: "لا يمكن حذف هذا الحساب" }, { status: 422 });
+  }
+  const existing = await env.DB.prepare("SELECT id FROM users WHERE id = ?").bind(id).first();
+  if (!existing) return Response.json({ error: "الحساب غير موجود" }, { status: 404 });
+  await env.DB.prepare("DELETE FROM users WHERE id = ?").bind(id).run();
+  await audit(env, auth.session, "delete", "user", id);
   return Response.json({ ok: true });
 }

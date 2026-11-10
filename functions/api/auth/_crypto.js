@@ -18,7 +18,7 @@ export async function hashPassword(password, salt = crypto.getRandomValues(new U
     key,
     256
   );
-  return `pbkdf2$120000$${bytesToBase64(salt)}$${bytesToBase64(new Uint8Array(bits))}`;
+  return `pbkdf2$100000$${bytesToBase64(salt)}$${bytesToBase64(new Uint8Array(bits))}`;
 }
 
 export async function verifyPassword(password, stored) {

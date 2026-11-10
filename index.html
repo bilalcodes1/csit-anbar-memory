@@ -12,8 +12,10 @@
     @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;600;700&display=swap');
     :root { --ink:#102a43; --gold:#c8a96b; --cream:#f7f4ee; --teal:#1f6f78; }
     html { scroll-behavior:smooth; }
-    body { font-family:'IBM Plex Sans Arabic',sans-serif; background:var(--cream); color:var(--ink); }
-    .display { font-family:'Noto Kufi Arabic','IBM Plex Sans Arabic',sans-serif; letter-spacing:-.03em; }
+    body { font-family:'IBM Plex Sans Arabic',sans-serif; background:var(--cream); color:var(--ink); line-height:1.85; }
+    h1,h2,h3,h4,h5,h6,p,span,strong,small,button,a,label { line-height:1.85; }
+    .display { font-family:'Noto Kufi Arabic','IBM Plex Sans Arabic',sans-serif; letter-spacing:-.03em; line-height:1.75; }
+    .display br + span { display:inline-block; margin-top:.12em; }
     .grain { background-image:radial-gradient(rgba(16,42,67,.08) .7px, transparent .7px); background-size:12px 12px; }
     .hero-glow { background:radial-gradient(circle at 75% 15%,rgba(200,169,107,.26),transparent 30%),linear-gradient(135deg,#102a43 0%,#174b60 55%,#1f6f78 100%); }
     .glass { background:rgba(255,255,255,.72); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,.7); }
@@ -120,15 +122,38 @@
   </div>
 
   <script>
-    const batches = [
+    const fallbackBatches = [
       { year:'2026', label:'الدفعة الحالية', type:'current', title:'دفعة الأمل والطموح', quote:'نكتب بدايتنا اليوم، ونترك للغد أجمل الأثر.', image:'assets/batches/2026.jpg', students:'صورة أرشيفية للمعاينة · الأسماء تضاف لاحقًا.', tone:'from-[#1f6f78] to-[#102a43]' },
       { year:'2024', label:'دفعة متخرجة', type:'graduated', title:'دفعة العبور', quote:'أربع سنوات صنعت من الزملاء عائلة ومن التعب إنجازًا.', image:'assets/batches/2024.jpg', students:'صورة أرشيفية للمعاينة · الأسماء تضاف لاحقًا.', tone:'from-[#9b7740] to-[#102a43]' },
       { year:'2023', label:'دفعة متخرجة', type:'graduated', title:'دفعة الأثر', quote:'في كل زاوية من الكلية ذكرى تحمل أسماءنا.', image:'assets/batches/2023.jpg', students:'صورة أرشيفية للمعاينة · الأسماء تضاف لاحقًا.', tone:'from-[#356b72] to-[#102a43]' },
       { year:'2022', label:'دفعة متخرجة', type:'graduated', title:'دفعة البداية', quote:'من هنا بدأت الحكاية، وبقيت الوجوه في الذاكرة.', image:'assets/batches/2022.jpg', students:'صورة أرشيفية للمعاينة · الأسماء تضاف لاحقًا.', tone:'from-[#8c6b3f] to-[#102a43]' }
     ];
+    let batches = [...fallbackBatches];
     const grid = document.getElementById('batch-grid');
     const modal = document.getElementById('batch-modal');
     const modalContent = document.getElementById('modal-content');
+    function publicBatch(batch) {
+      return {
+        ...batch,
+        year: String(batch.year),
+        label: batch.status === 'graduated' ? 'دفعة متخرجة' : 'الدفعة الحالية',
+        type: batch.status === 'graduated' ? 'graduated' : 'current',
+        image: batch.cover_url || (batch.cover_key ? `/media/${batch.cover_key}` : `assets/batches/${batch.year}.jpg`),
+        students: batch.students?.length ? `${batch.students.length} أسماء منشورة` : 'الأسماء تضاف لاحقًا.',
+        tone: batch.status === 'graduated' ? 'from-[#9b7740] to-[#102a43]' : 'from-[#1f6f78] to-[#102a43]'
+      };
+    }
+    async function loadPublicBatches() {
+      try {
+        const response = await fetch('/api/batches', { headers: { Accept: 'application/json' } });
+        if (!response.ok) throw new Error('تعذر جلب الدفعات المنشورة');
+        const data = await response.json();
+        if (Array.isArray(data)) batches = data.map(publicBatch);
+      } catch (error) {
+        console.warn('تعذر تحميل الدفعات من الخادم، سيتم استخدام المعاينة المحلية.', error);
+      }
+      renderBatches();
+    }
     function renderBatches(filter='all') {
       grid.innerHTML = batches.filter(b => filter==='all' || b.type===filter).map((b, i) => `
         <article class="year-card group relative overflow-hidden rounded-3xl bg-white shadow-lg" data-type="${b.type}">
@@ -137,18 +162,30 @@
         </article>`).join('');
       lucide.createIcons();
     }
-    function openBatch(year) {
-      const b = batches.find(item => item.year===year);
+    async function openBatch(year) {
+      let b = batches.find(item => item.year===String(year));
+      try {
+        const response = await fetch(`/api/batches/${encodeURIComponent(year)}`, { headers: { Accept: 'application/json' } });
+        if (response.ok) b = { ...b, ...publicBatch(await response.json()) };
+      } catch (error) {
+        console.warn('تعذر تحميل تفاصيل الدفعة.', error);
+      }
+      if (!b) return;
       const albums = [
-        { id:'group', title:'صورة الدفعة', subtitle:'اللحظة التي جمعتنا', icon:'users', image:b.image, count:'صورة المعاينة' },
-        { id:'activities', title:'أنشطة وفعاليات', subtitle:'أيام صنعت الذكرى', icon:'party-popper', image:batches[(Number(b.year)-2022+1)%batches.length].image, count:'ألبوم مفتوح' },
-        { id:'campus', title:'في أروقة الكلية', subtitle:'أماكن تحفظ خطانا', icon:'building-2', image:batches[(Number(b.year)-2022+2)%batches.length].image, count:'ألبوم مفتوح' },
-        { id:'graduation', title:'لحظات التخرج', subtitle:'نهاية فصل وبداية طريق', icon:'graduation-cap', image:batches[(Number(b.year)-2022+3)%batches.length].image, count:'يضاف لاحقًا' }
+        { id:'group', title:'صورة الدفعة', subtitle:'اللحظة التي جمعتنا', icon:'users', image:b.image, count:'صورة الدفعة' },
+        ...(b.albums || []).map(album => ({
+          id: album.slug,
+          title: album.title,
+          subtitle: album.subtitle || 'أيام صنعت الذكرى',
+          icon: 'images',
+          image: album.photos?.[0]?.url || b.image,
+          count: `${album.photos?.length || 0} صور`
+        }))
       ];
       modalContent.innerHTML = `
         <div class="overflow-hidden rounded-[1.7rem] bg-gradient-to-br ${b.tone} p-6 text-white md:p-8">
           <p class="text-sm font-bold tracking-widest text-[#e3c98d]">${b.label} · الألبوم السنوي الرقمي</p>
-          <div class="mt-3 flex flex-wrap items-end justify-between gap-4"><div><span class="display text-7xl font-bold text-[#e3c98d]">${b.year}</span><h2 class="display mt-1 text-3xl font-bold">${b.title}</h2></div><span class="rounded-full border border-white/20 px-4 py-2 text-sm text-white/75">أرشيف الدفعة</span></div>
+          <div class="mt-3 flex flex-wrap items-end justify-between gap-4"><div><span class="display text-7xl font-bold text-[#e3c98d]">${b.year}</span><h2 class="display mt-1 text-3xl font-bold">${b.title}</h2></div><div class="flex flex-wrap items-center gap-2"><button id="share-batch" class="inline-flex items-center gap-2 rounded-full bg-[#e3c98d] px-4 py-2 text-sm font-bold text-[#102a43] transition hover:bg-white"><i data-lucide="share-2" class="h-4 w-4"></i> مشاركة الدفعة</button><span class="rounded-full border border-white/20 px-4 py-2 text-sm text-white/75">أرشيف الدفعة</span></div></div>
           <p class="mt-5 max-w-xl text-lg leading-loose text-white/75">${b.quote}</p>
         </div>
         <div class="mt-7 overflow-hidden rounded-3xl bg-white shadow-lg"><img src="${b.image}" alt="${b.title}" class="max-h-[28rem] w-full object-cover"><div class="flex flex-wrap items-center justify-between gap-3 p-5"><span class="text-sm text-slate-500">${b.students}</span><span class="rounded-full bg-[#eee8da] px-4 py-2 text-sm font-bold text-[#102a43]">كل صورة لها حكاية</span></div></div>
@@ -160,11 +197,27 @@
       modalContent.querySelectorAll('[data-album]').forEach(tile => tile.addEventListener('click', () => {
         const album = albums.find(item => item.id===tile.dataset.album);
         modalContent.querySelector('#album-title').textContent = album.title;
-        modalContent.querySelector('#album-images').innerHTML = [album.image, b.image].map((image, index) => `<img src="${image}" alt="${album.title} ${index + 1}" class="h-40 w-full rounded-2xl object-cover">`).join('');
+        const sourceAlbum = (b.albums || []).find(item => item.slug === album.id);
+        const images = sourceAlbum?.photos?.length ? sourceAlbum.photos.map(photo => photo.url) : [album.image, b.image];
+        modalContent.querySelector('#album-images').innerHTML = images.map((image, index) => `<img src="${image}" alt="${album.title} ${index + 1}" class="h-40 w-full rounded-2xl object-cover">`).join('');
         viewer.classList.remove('hidden');
         viewer.scrollIntoView({ behavior:'smooth', block:'nearest' });
       }));
       modalContent.querySelector('#album-close').addEventListener('click', () => viewer.classList.add('hidden'));
+      modalContent.querySelector('#share-batch').addEventListener('click', () => shareBatch(b));
+    }
+    async function shareBatch(batch) {
+      const url = `${location.origin}/batch/${encodeURIComponent(batch.year)}`;
+      const shareData = { title: `${batch.title} | ذاكرة الكلية`, text: `استكشف صور دفعة ${batch.year} في ذاكرة الكلية`, url };
+      try {
+        if (navigator.share) await navigator.share(shareData);
+        else {
+          await navigator.clipboard.writeText(url);
+          alert('تم نسخ رابط الدفعة');
+        }
+      } catch (error) {
+        if (error?.name !== 'AbortError') alert('تعذر مشاركة الدفعة، يمكنك نسخ الرابط من المتصفح.');
+      }
     }
     function closeBatch() { modal.classList.add('hidden'); modal.classList.remove('flex'); document.body.classList.remove('modal-open'); }
     document.getElementById('modal-close').addEventListener('click', closeBatch);
@@ -172,6 +225,9 @@
     document.addEventListener('keydown', e => { if (e.key==='Escape') closeBatch(); });
     document.querySelectorAll('.filter-btn').forEach(button => button.addEventListener('click', () => { document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('bg-[#102a43]','text-white')); document.querySelectorAll('.filter-btn').forEach(b=>b.classList.add('text-slate-500')); button.classList.add('bg-[#102a43]','text-white'); button.classList.remove('text-slate-500'); renderBatches(button.dataset.filter); }));
     renderBatches();
+    loadPublicBatches();
+    const sharedBatch = location.pathname.match(/^\/batch\/(\d+)\/?$/) || location.hash.match(/^#batch-(\d+)$/);
+    if (sharedBatch) setTimeout(() => openBatch(sharedBatch[1]), 400);
     lucide.createIcons();
   </script>
 </body>
