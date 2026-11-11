@@ -347,10 +347,6 @@ function heroTilt() {
   const touch = matchMedia('(any-pointer: coarse)');
   if (!device || !touch.matches) return () => {};
 
-  const permissionButton = document.getElementById('hero-tilt-permission');
-  const permissionRequired = typeof device.requestPermission === 'function';
-  let enabled = !permissionRequired;
-  let permissionAsked = false;
   let visible = false;
   let listening = false;
   let baseline;
@@ -387,9 +383,7 @@ function heroTilt() {
   }
 
   function sync() {
-    const active = visible && !document.hidden && !motionPreference.matches;
-    permissionButton.hidden = !active || !permissionRequired || permissionAsked;
-    const shouldListen = active && enabled;
+    const shouldListen = visible && !document.hidden && !motionPreference.matches;
     if (shouldListen === listening) return;
     listening = shouldListen;
     if (listening) window.addEventListener('deviceorientation', tilt, { passive: true });
@@ -399,16 +393,6 @@ function heroTilt() {
     }
   }
 
-  permissionButton.addEventListener('click', async () => {
-    if (permissionAsked) return;
-    permissionAsked = true;
-    try {
-      enabled = await device.requestPermission() === 'granted';
-    } catch {
-      enabled = false;
-    }
-    sync();
-  });
   motionPreference.addEventListener('change', sync);
   document.addEventListener('visibilitychange', sync);
   screen.orientation?.addEventListener('change', reset);

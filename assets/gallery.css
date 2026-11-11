@@ -88,21 +88,6 @@
 .hero-photo-label:empty { display: none; }
 .hero-photo:focus-visible { outline: 3px solid #e3c98d; outline-offset: 4px; z-index: 11; }
 
-#hero-tilt-permission {
-  position: absolute;
-  inset: calc(100% + .4rem) 0 auto;
-  width: max-content;
-  margin-inline: auto;
-  min-height: 44px;
-  padding-inline: .85rem;
-  border: 1px solid #ffffff60;
-  border-radius: 999px;
-  color: #fff;
-  font-size: .85rem;
-}
-#hero-tilt-permission[hidden] { display: none; }
-#hero-tilt-permission:focus-visible { outline: 2px solid #e3c98d; outline-offset: 3px; }
-
 @media (prefers-reduced-motion: no-preference) {
   .hero-photo {
     --tilt-depth: .65;
