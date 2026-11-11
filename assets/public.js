@@ -345,17 +345,12 @@ collage.addEventListener('click', openBatchLink);
 function startHeroGallery() {
   const frames = [...collage.querySelectorAll('.hero-photo')];
   const status = document.getElementById('hero-gallery-status');
-  const next = document.getElementById('hero-next');
-  const playback = document.getElementById('hero-playback');
-  const controls = next.parentElement;
   const failed = new Set();
   let photos = [];
   let cursor = 0;
   let slot = 0;
   let lastRefresh = -Infinity;
   let visible = false;
-  let hovered = false;
-  let paused = false;
   let busy = false;
 
   function clearFrame(frame) {
@@ -412,16 +407,7 @@ function startHeroGallery() {
     return false;
   }
 
-  function updateControls() {
-    const count = frames.filter(frame => frame.hasAttribute('href')).length;
-    const available = photos.filter(entry => !failed.has(entry.url)).length;
-    controls.hidden = !count || available <= count;
-    status.hidden = count > 0;
-    playback.hidden = motionPreference.matches;
-    playback.textContent = paused ? 'تشغيل التبديل' : 'إيقاف التبديل';
-  }
-
-  async function update(manual = false) {
+  async function update() {
     if (busy || !visible || document.hidden || modal.open || photoModal.open) return;
     busy = true;
     try {
@@ -445,23 +431,15 @@ function startHeroGallery() {
       const empty = frames.filter(frame => !frame.hasAttribute('href'));
       if (empty.length && photos.some(entry => !shown.has(entry.url) && !failed.has(entry.url))) {
         await Promise.all(empty.map(frame => fill(frame, shown)));
-      } else if (manual || !(paused || hovered || motionPreference.matches || collage.contains(document.activeElement))) {
+      } else if (!collage.querySelector('.hero-photo:focus-visible')) {
         await fill(frames[slot++ % frames.length], shown);
       }
     } finally {
-      updateControls();
+      status.hidden = frames.some(frame => frame.hasAttribute('href'));
       busy = false;
     }
   }
 
-  next.addEventListener('click', () => update(true));
-  playback.addEventListener('click', () => {
-    paused = !paused;
-    updateControls();
-  });
-  motionPreference.addEventListener('change', updateControls);
-  collage.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse') hovered = true; });
-  collage.addEventListener('pointerleave', () => { hovered = false; });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) update(); });
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(([entry]) => {
@@ -472,7 +450,7 @@ function startHeroGallery() {
     visible = true;
     update();
   }
-  setInterval(update, 5_600);
+  setInterval(update, 4_800);
 }
 
 startHeroGallery();
