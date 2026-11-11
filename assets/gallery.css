@@ -87,8 +87,6 @@
 }
 .hero-photo-label:empty { display: none; }
 .hero-photo:focus-visible { outline: 3px solid #e3c98d; outline-offset: 4px; z-index: 11; }
-.hero-gallery-status[hidden] { display: none; }
-.hero-gallery-status { text-align: center; margin-block-start: .75rem; font-size: .875rem; color: #fff; }
 
 @media (prefers-reduced-motion: no-preference) {
   .hero-photo { transition: translate .26s ease, scale .26s ease, box-shadow .26s ease; }

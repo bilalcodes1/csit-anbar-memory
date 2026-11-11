@@ -344,7 +344,6 @@ collage.addEventListener('click', openBatchLink);
 
 function startHeroGallery() {
   const frames = [...collage.querySelectorAll('.hero-photo')];
-  const status = document.getElementById('hero-gallery-status');
   const failed = new Set();
   let photos = [];
   let cursor = 0;
@@ -422,9 +421,8 @@ function startHeroGallery() {
           photos = [...unique.values()];
           failed.clear();
           frames.filter(frame => !unique.has(frame.dataset.url)).forEach(clearFrame);
-          status.textContent = 'ماكو صور منشورة للعرض حالياً.';
         } catch {
-          status.textContent = 'تعذّر تحميل صور الأرشيف حالياً.';
+          // Keep the current photos until the next refresh.
         }
       }
       const shown = new Set(frames.map(frame => frame.dataset.url));
@@ -435,7 +433,6 @@ function startHeroGallery() {
         await fill(frames[slot++ % frames.length], shown);
       }
     } finally {
-      status.hidden = frames.some(frame => frame.hasAttribute('href'));
       busy = false;
     }
   }
