@@ -27,6 +27,9 @@ function mediaUrl(value) {
   return typeof value === 'string' && /^\/media\/[a-zA-Z0-9_./-]+$/.test(value) ? value : '';
 }
 
+const isIllustration = url => url?.startsWith('/media/archive-illustrations/');
+const illustrationLabel = '<span class="archive-illustration-label">صورة توضيحية</span>';
+
 function photo(url, title, classes) {
   return url ? `<img src="${escapeHtml(url)}" alt="${escapeHtml(title)}" class="${classes}" loading="lazy">` : '';
 }
@@ -88,7 +91,7 @@ function render() {
     : batches.length ? 'لا توجد دفعات تطابق البحث.' : 'لا توجد دفعات منشورة حاليًا.';
   grid.innerHTML = visible.map(b => `
         <article class="year-card group relative overflow-hidden rounded-3xl bg-white shadow-lg" data-type="${b.type}">
-          <a href="/batch/${b.year}" data-year="${b.year}" class="relative block h-80 w-full overflow-hidden bg-gradient-to-br ${b.tone} text-right">${photo(b.image, b.title, "photo-frame h-full w-full object-cover")}<span class="photo-shine absolute inset-0"></span><div class="absolute inset-0 bg-gradient-to-t from-[#102a43]/95 via-[#102a43]/20 to-transparent"></div><div class="absolute inset-x-6 top-6 flex items-start justify-between text-white"><span class="rounded-full border border-white/25 bg-black/10 px-3 py-1 text-xs">${b.label}</span><span class="display text-6xl font-bold text-[#e3c98d]">${b.year}</span></div><div class="absolute inset-x-6 bottom-6 text-white"><i data-lucide="camera" class="mb-3 h-7 w-7 text-[#e3c98d]"></i><h3 class="display text-2xl font-bold">${escapeHtml(b.title)}</h3><p class="mt-2 text-sm text-white/75">${escapeHtml(b.quote)}</p></div></a>
+          <a href="/batch/${b.year}" data-year="${b.year}" class="relative block h-80 w-full overflow-hidden bg-gradient-to-br ${b.tone} text-right">${photo(b.image, b.title, "photo-frame h-full w-full object-cover")}<span class="photo-shine absolute inset-0"></span><div class="absolute inset-0 bg-gradient-to-t from-[#102a43]/95 via-[#102a43]/20 to-transparent"></div><div class="absolute inset-x-6 top-6 flex items-start justify-between text-white"><span class="rounded-full border border-white/25 bg-black/10 px-3 py-1 text-xs">${b.label}</span><span class="display text-6xl font-bold text-[#e3c98d]">${b.year}</span></div><div class="absolute inset-x-6 bottom-6 text-white"><i data-lucide="camera" class="mb-3 h-7 w-7 text-[#e3c98d]"></i><h3 class="display text-2xl font-bold">${escapeHtml(b.title)}</h3><p class="mt-2 text-sm text-white/75">${escapeHtml(b.quote)}</p>${isIllustration(b.image) ? illustrationLabel : ''}</div></a>
           <div class="flex items-center justify-between gap-4 p-5"><span class="text-sm text-slate-500">${b.albums.length} ألبوم</span><a href="/batch/${b.year}" data-year="${b.year}" class="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#eee8da] px-4 py-2 text-sm font-bold text-[#102a43] transition hover:bg-[#c8a96b]">افتح الصورة <i data-lucide="maximize-2" class="h-4 w-4"></i></a></div>
         </article>`).join('');
   grid.querySelectorAll('.year-card').forEach(card => reveal?.observe(card));
@@ -96,7 +99,8 @@ function render() {
 }
 
 function showDetail(b) {
-  const cover = b.image ? { title: 'غلاف الدفعة', photos: [{ url: b.image, alt_text: b.title }] } : null;
+  const cover = b.image ? { title: 'غلاف الدفعة', photos: [{ url: b.image, alt_text: isIllustration(b.image) ? 'مشهد تخرج توضيحي' : b.title,
+    caption: isIllustration(b.image) ? 'صورة توضيحية للتخرج' : '' }] } : null;
   const albums = b.albums.map(album => ({
     title: album.title,
     subtitle: album.subtitle || 'أيام صنعت الذكرى',
@@ -112,9 +116,9 @@ function showDetail(b) {
           <p class="mt-5 max-w-xl text-lg leading-loose text-white/75">${escapeHtml(b.quote || b.description)}</p>
         </div>
         <p id="share-feedback" role="status" class="break-all"></p>
-        <div class="mt-7 overflow-hidden rounded-3xl bg-white shadow-lg">${cover ? `<button type="button" id="batch-cover" class="block w-full" aria-label="عرض غلاف الدفعة">${photo(b.image, b.title, "max-h-[28rem] w-full object-cover")}</button>` : ''}<div class="flex flex-wrap items-center justify-between gap-3 p-5"><span class="text-sm text-slate-500">${b.students.length} أسماء منشورة</span><span class="rounded-full bg-[#eee8da] px-4 py-2 text-sm font-bold text-[#102a43]">كل صورة لها حكاية</span></div></div>
+        <div class="mt-7 overflow-hidden rounded-3xl bg-white shadow-lg">${cover ? `<button type="button" id="batch-cover" class="block w-full" aria-label="عرض غلاف الدفعة">${photo(b.image, b.title, "max-h-[28rem] w-full object-cover")}</button>` : ''}<div class="flex flex-wrap items-center justify-between gap-3 p-5"><span class="text-sm text-slate-500">${b.students.length} أسماء منشورة</span>${isIllustration(b.image) ? illustrationLabel : ''}</div></div>
         <div class="mt-8 flex items-end justify-between gap-4"><div><p class="text-sm font-bold tracking-widest text-[#1f6f78]">أقسام الألبوم السنوي</p><h3 class="display mt-2 text-3xl font-bold text-[#102a43]">استكشف فصول الدفعة</h3></div><span class="text-sm text-slate-500">${albums.length} أقسام</span></div>
-        <div class="mt-5 grid gap-4 sm:grid-cols-2">${albums.map((album, index) => `<button data-album="${index}" class="album-tile group relative h-44 overflow-hidden rounded-2xl bg-[#102a43] text-right shadow-md">${photo(album.image, album.title, "h-full w-full object-cover opacity-70")}<span class="absolute inset-0 bg-gradient-to-t from-[#102a43] via-[#102a43]/25 to-transparent"></span><span class="absolute inset-x-4 bottom-4 text-white"><i data-lucide="images" class="mb-2 h-5 w-5 text-[#e3c98d]"></i><strong class="block text-lg">${escapeHtml(album.title)}</strong><small class="text-white/70">${escapeHtml(album.subtitle)} · ${album.count}</small></span></button>`).join('')}</div>
+        <div class="mt-5 grid gap-4 sm:grid-cols-2">${albums.map((album, index) => `<button data-album="${index}" class="album-tile group relative h-44 overflow-hidden rounded-2xl bg-[#102a43] text-right shadow-md">${photo(album.image, album.title, "h-full w-full object-cover opacity-70")}<span class="absolute inset-0 bg-gradient-to-t from-[#102a43] via-[#102a43]/25 to-transparent"></span><span class="absolute inset-x-4 bottom-4 text-white"><i data-lucide="images" class="mb-2 h-5 w-5 text-[#e3c98d]"></i><strong class="block text-lg">${escapeHtml(album.title)}</strong><small class="text-white/70">${escapeHtml(album.subtitle)} · ${album.count}</small>${isIllustration(album.image) ? illustrationLabel : ''}</span></button>`).join('')}</div>
         <div id="album-viewer" class="mt-7 hidden rounded-3xl border border-[#102a43]/10 bg-white p-5"><div class="flex items-center justify-between gap-4"><div><p class="text-xs font-bold tracking-widest text-[#1f6f78]">الألبوم المختار</p><h4 id="album-title" tabindex="-1" class="mt-1 text-xl font-bold text-[#102a43]"></h4></div><button id="album-close" type="button" class="rounded-full bg-[#eee8da] text-[#102a43]" aria-label="إغلاق الألبوم"><i data-lucide="x" class="h-5 w-5" aria-hidden="true"></i></button></div><div id="album-images" class="mt-4 grid grid-cols-2 gap-3"></div></div>
     <section class="mt-7 rounded-3xl border border-[#102a43]/10 bg-white p-5">
       <h3 class="display mb-2 text-xl font-bold text-[#102a43]">أسماء الطلبة</h3>
@@ -138,7 +142,7 @@ function showDetail(b) {
     albumTitle.textContent = album.title;
     modalContent.querySelector('#album-images').innerHTML = album.photos.length ? album.photos.map((entry, index) => `
       <figure>${thumbnail(entry, index, album.title)}
-        ${entry.caption ? `<figcaption class="mt-2 text-sm">${escapeHtml(entry.caption)}</figcaption>` : ''}
+        ${entry.caption ? `<figcaption class="archive-photo-caption mt-2 text-sm">${escapeHtml(entry.caption)}</figcaption>` : ''}
       </figure>`).join('') : '<p class="col-span-2 text-sm text-slate-600">لا توجد صور منشورة في هذا الألبوم.</p>';
     modalContent.querySelectorAll('#album-images [data-photo]').forEach(button => {
       button.addEventListener('click', () => openPhoto(album, Number(button.dataset.photo)));
