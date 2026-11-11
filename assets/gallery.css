@@ -88,12 +88,36 @@
 .hero-photo-label:empty { display: none; }
 .hero-photo:focus-visible { outline: 3px solid #e3c98d; outline-offset: 4px; z-index: 11; }
 
+#hero-tilt-permission {
+  position: absolute;
+  inset: calc(100% + .4rem) 0 auto;
+  width: max-content;
+  margin-inline: auto;
+  min-height: 44px;
+  padding-inline: .85rem;
+  border: 1px solid #ffffff60;
+  border-radius: 999px;
+  color: #fff;
+  font-size: .85rem;
+}
+#hero-tilt-permission[hidden] { display: none; }
+#hero-tilt-permission:focus-visible { outline: 2px solid #e3c98d; outline-offset: 3px; }
+
 @media (prefers-reduced-motion: no-preference) {
-  .hero-photo { transition: translate .26s ease, scale .26s ease, box-shadow .26s ease; }
-  .hero-photo.is-touched { translate: 0 -8px; scale: 1.04; z-index: 11; box-shadow: 0 24px 46px #07152170; }
+  .hero-photo {
+    --tilt-depth: .65;
+    translate: calc(var(--tilt-x, 0px) * var(--tilt-depth))
+      calc(var(--tilt-y, 0px) * var(--tilt-depth) + var(--hero-lift, 0px));
+    rotate: calc(var(--tilt-roll, 0deg) * var(--tilt-depth));
+    transition: translate .16s ease-out, rotate .16s ease-out, scale .26s ease, box-shadow .26s ease;
+  }
+  .hero-photo:nth-child(2) { --tilt-depth: .85; }
+  .hero-photo:nth-child(3) { --tilt-depth: 1; }
+  .hero-photo:nth-child(4) { --tilt-depth: .45; }
+  .hero-photo.is-touched { --hero-lift: -8px; scale: 1.04; z-index: 11; box-shadow: 0 24px 46px #07152170; }
 }
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  .hero-photo:hover { translate: 0 -8px; scale: 1.04; z-index: 11; box-shadow: 0 24px 46px #07152170; }
+  .hero-photo:hover { --hero-lift: -8px; scale: 1.04; z-index: 11; box-shadow: 0 24px 46px #07152170; }
 }
 
 #find-photos { scroll-margin-top: 7rem; }

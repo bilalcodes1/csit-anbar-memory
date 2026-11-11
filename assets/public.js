@@ -342,7 +342,85 @@ collage?.addEventListener('pointercancel', clearTouchEffect);
 
 collage.addEventListener('click', openBatchLink);
 
+function heroTilt() {
+  const device = window.DeviceOrientationEvent;
+  const touch = matchMedia('(any-pointer: coarse)');
+  if (!device || !touch.matches) return () => {};
+
+  const permissionButton = document.getElementById('hero-tilt-permission');
+  const permissionRequired = typeof device.requestPermission === 'function';
+  let enabled = !permissionRequired;
+  let permissionAsked = false;
+  let visible = false;
+  let listening = false;
+  let baseline;
+  let x = 0;
+  let y = 0;
+  let frame = 0;
+
+  function reset() {
+    cancelAnimationFrame(frame);
+    frame = 0;
+    baseline = undefined;
+    x = y = 0;
+    for (const property of ['--tilt-x', '--tilt-y', '--tilt-roll']) collage.style.removeProperty(property);
+  }
+
+  function tilt(event) {
+    const { beta, gamma } = event;
+    if (!Number.isFinite(beta) || !Number.isFinite(gamma)) return;
+
+    baseline ??= { beta, gamma };
+    const pitch = ((beta - baseline.beta + 540) % 360) - 180;
+    const roll = gamma - baseline.gamma;
+    const angle = (screen.orientation?.angle ?? window.orientation ?? 0) * Math.PI / 180;
+    const clamp = (value, limit) => Math.max(-limit, Math.min(limit, value));
+    x += (clamp((roll * Math.cos(angle) + pitch * Math.sin(angle)) * .35, 10) - x) * .24;
+    y += (clamp((pitch * Math.cos(angle) - roll * Math.sin(angle)) * .3, 8) - y) * .24;
+    if (frame) return;
+    frame = requestAnimationFrame(() => {
+      collage.style.setProperty('--tilt-x', `${x.toFixed(2)}px`);
+      collage.style.setProperty('--tilt-y', `${y.toFixed(2)}px`);
+      collage.style.setProperty('--tilt-roll', `${(x * .2).toFixed(2)}deg`);
+      frame = 0;
+    });
+  }
+
+  function sync() {
+    const active = visible && !document.hidden && !motionPreference.matches;
+    permissionButton.hidden = !active || !permissionRequired || permissionAsked;
+    const shouldListen = active && enabled;
+    if (shouldListen === listening) return;
+    listening = shouldListen;
+    if (listening) window.addEventListener('deviceorientation', tilt, { passive: true });
+    else {
+      window.removeEventListener('deviceorientation', tilt);
+      reset();
+    }
+  }
+
+  permissionButton.addEventListener('click', async () => {
+    if (permissionAsked) return;
+    permissionAsked = true;
+    try {
+      enabled = await device.requestPermission() === 'granted';
+    } catch {
+      enabled = false;
+    }
+    sync();
+  });
+  motionPreference.addEventListener('change', sync);
+  document.addEventListener('visibilitychange', sync);
+  screen.orientation?.addEventListener('change', reset);
+  window.addEventListener('orientationchange', reset);
+  return inView => {
+    visible = inView;
+    sync();
+  };
+}
+
 function startHeroGallery() {
+  const setTiltVisible = heroTilt();
   const frames = [...collage.querySelectorAll('.hero-photo')];
   const failed = new Set();
   let photos = [];
@@ -441,10 +519,12 @@ function startHeroGallery() {
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting;
+      setTiltVisible(visible);
       if (visible) update();
     }, { threshold: .16 }).observe(collage);
   } else {
     visible = true;
+    setTiltVisible(true);
     update();
   }
   setInterval(update, 4_800);
