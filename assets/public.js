@@ -201,13 +201,14 @@ function route() {
   else if (modal.open) modal.close();
 }
 
-grid.addEventListener('click', event => {
+function openBatchLink(event) {
   const link = event.target.closest('[data-year]');
   if (!link || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
   event.preventDefault();
   history.pushState({ batch: true }, '', link.href);
   openBatch(link.dataset.year);
-});
+}
+grid.addEventListener('click', openBatchLink);
 modal.addEventListener('click', event => {
   if (event.target === modal) modal.close();
 });
@@ -338,6 +339,143 @@ collage?.addEventListener('pointerdown', event => {
   touchEffectTimer = setTimeout(clearTouchEffect, 420);
 });
 collage?.addEventListener('pointercancel', clearTouchEffect);
+
+collage.addEventListener('click', openBatchLink);
+
+function startHeroGallery() {
+  const frames = [...collage.querySelectorAll('.hero-photo')];
+  const status = document.getElementById('hero-gallery-status');
+  const next = document.getElementById('hero-next');
+  const playback = document.getElementById('hero-playback');
+  const controls = next.parentElement;
+  const failed = new Set();
+  let photos = [];
+  let cursor = 0;
+  let slot = 0;
+  let lastRefresh = -Infinity;
+  let visible = false;
+  let hovered = false;
+  let paused = false;
+  let busy = false;
+
+  function clearFrame(frame) {
+    frame.querySelectorAll('img').forEach(img => img.remove());
+    frame.querySelector('.hero-photo-label').textContent = '';
+    frame.removeAttribute('href');
+    frame.removeAttribute('aria-label');
+    delete frame.dataset.year;
+    delete frame.dataset.url;
+  }
+
+  function display(frame, entry, image) {
+    const view = frame.querySelector('.hero-photo-view');
+    const previous = view.querySelector('img');
+    const label = view.querySelector('.hero-photo-label');
+    const illustrated = isIllustration(entry.url);
+    label.textContent = illustrated ? `${entry.year} · صورة توضيحية` : `دفعة ${entry.year}`;
+    frame.href = `/batch/${entry.year}`;
+    frame.dataset.year = entry.year;
+    frame.dataset.url = entry.url;
+    frame.setAttribute('aria-label', `افتح دفعة ${entry.year}${illustrated ? '، صورة توضيحية' : ''}`);
+    view.insertBefore(image, label);
+
+    if (motionPreference.matches || !image.animate) {
+      previous?.remove();
+      return;
+    }
+    const direction = frames.indexOf(frame) % 2 ? 1 : -1;
+    const transition = image.animate([
+      { opacity: 0, transform: `translateX(${direction * 5}%) scale(1.07)` },
+      { opacity: 1, transform: 'translateX(0) scale(1)' }
+    ], { duration: 580, easing: 'cubic-bezier(.22,.65,.28,1)' });
+    return transition.finished.catch(() => {}).then(() => previous?.remove());
+  }
+
+  async function fill(frame, used) {
+    for (let i = 0; i < photos.length; i++) {
+      const entry = photos[cursor++ % photos.length];
+      if (used.has(entry.url) || failed.has(entry.url)) continue;
+      used.add(entry.url);
+      const image = new Image();
+      image.alt = '';
+      image.decoding = 'async';
+      image.src = entry.url;
+      try {
+        await image.decode();
+      } catch {
+        failed.add(entry.url);
+        continue;
+      }
+      await display(frame, entry, image);
+      return true;
+    }
+    return false;
+  }
+
+  function updateControls() {
+    const count = frames.filter(frame => frame.hasAttribute('href')).length;
+    const available = photos.filter(entry => !failed.has(entry.url)).length;
+    controls.hidden = !count || available <= count;
+    status.hidden = count > 0;
+    playback.hidden = motionPreference.matches;
+    playback.textContent = paused ? 'تشغيل التبديل' : 'إيقاف التبديل';
+  }
+
+  async function update(manual = false) {
+    if (busy || !visible || document.hidden || modal.open || photoModal.open) return;
+    busy = true;
+    try {
+      if (performance.now() - lastRefresh >= 60_000) {
+        lastRefresh = performance.now();
+        try {
+          const result = await fetchJson('/api/archive-highlights', AbortSignal.timeout(10_000));
+          const unique = new Map();
+          for (const { year, url } of result) {
+            if (Number.isInteger(year) && mediaUrl(url) && !unique.has(url)) unique.set(url, { year, url });
+          }
+          photos = [...unique.values()];
+          failed.clear();
+          frames.filter(frame => !unique.has(frame.dataset.url)).forEach(clearFrame);
+          status.textContent = 'ماكو صور منشورة للعرض حالياً.';
+        } catch {
+          status.textContent = 'تعذّر تحميل صور الأرشيف حالياً.';
+        }
+      }
+      const shown = new Set(frames.map(frame => frame.dataset.url));
+      const empty = frames.filter(frame => !frame.hasAttribute('href'));
+      if (empty.length && photos.some(entry => !shown.has(entry.url) && !failed.has(entry.url))) {
+        await Promise.all(empty.map(frame => fill(frame, shown)));
+      } else if (manual || !(paused || hovered || motionPreference.matches || collage.contains(document.activeElement))) {
+        await fill(frames[slot++ % frames.length], shown);
+      }
+    } finally {
+      updateControls();
+      busy = false;
+    }
+  }
+
+  next.addEventListener('click', () => update(true));
+  playback.addEventListener('click', () => {
+    paused = !paused;
+    updateControls();
+  });
+  motionPreference.addEventListener('change', updateControls);
+  collage.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse') hovered = true; });
+  collage.addEventListener('pointerleave', () => { hovered = false; });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) update(); });
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      if (visible) update();
+    }, { threshold: .16 }).observe(collage);
+  } else {
+    visible = true;
+    update();
+  }
+  setInterval(update, 5_600);
+}
+
+startHeroGallery();
 
 const studentForm = document.getElementById('student-search');
 const studentName = document.getElementById('student-name');

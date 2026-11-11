@@ -77,11 +77,26 @@
             <a href="#story" class="inline-flex items-center gap-2 px-3 py-3 font-semibold text-white/90 transition hover:text-[#e3c98d]">عن الفكرة</a>
           </div>
         </div>
-        <div class="hero-collage relative mx-auto h-[27rem] w-full max-w-md">
-          <div class="hero-photo absolute right-2 top-8 h-52 w-40 rotate-6 overflow-hidden rounded-3xl border-4 border-white/80 bg-white p-2 shadow-2xl"><img src="/assets/batches/2023.jpg" alt="صورة من دفعة 2023" class="h-full w-full rounded-2xl object-cover"></div>
-          <div class="hero-photo absolute left-2 top-1 h-64 w-48 -rotate-6 overflow-hidden rounded-3xl border-4 border-white/80 bg-white p-2 shadow-2xl"><img src="/assets/batches/2026.jpg" alt="صورة من دفعة 2026" class="h-full w-full rounded-2xl object-cover"></div>
-          <div class="hero-photo absolute bottom-1 left-1/2 z-10 h-72 w-56 -translate-x-1/2 rotate-2 overflow-hidden rounded-3xl border-4 border-white/90 bg-white p-2 shadow-2xl"><img src="/assets/batches/2024.jpg" alt="صورة دفعة 2024" class="h-full w-full rounded-2xl object-cover"><span class="absolute bottom-5 right-5 rounded-full bg-[#102a43]/85 px-4 py-2 text-sm font-bold text-[#e3c98d]">من هنا بدأت الحكاية</span></div>
-          <div class="hero-photo absolute bottom-8 right-0 h-40 w-32 -rotate-6 overflow-hidden rounded-3xl border-4 border-white/80 bg-white p-2 shadow-2xl"><img src="/assets/batches/2022.jpg" alt="صورة من دفعة 2022" class="h-full w-full rounded-2xl object-cover"></div>
+        <div class="hero-gallery mx-auto w-full max-w-md" aria-label="صور من ألبومات الدفعات">
+          <div class="hero-collage relative h-[27rem] w-full">
+            <a class="hero-photo absolute right-2 top-8 h-52 w-40 rotate-6 rounded-3xl border-4 border-white/80 bg-white p-2 shadow-2xl">
+              <span class="hero-photo-view"><span class="hero-photo-label"></span></span>
+            </a>
+            <a class="hero-photo absolute left-2 top-1 h-64 w-48 -rotate-6 rounded-3xl border-4 border-white/80 bg-white p-2 shadow-2xl">
+              <span class="hero-photo-view"><span class="hero-photo-label"></span></span>
+            </a>
+            <a class="hero-photo absolute bottom-1 left-1/2 z-10 h-72 w-56 -translate-x-1/2 rotate-2 rounded-3xl border-4 border-white/80 bg-white p-2 shadow-2xl">
+              <span class="hero-photo-view"><span class="hero-photo-label"></span></span>
+            </a>
+            <a class="hero-photo absolute bottom-8 right-0 h-40 w-32 -rotate-6 rounded-3xl border-4 border-white/80 bg-white p-2 shadow-2xl">
+              <span class="hero-photo-view"><span class="hero-photo-label"></span></span>
+            </a>
+          </div>
+          <p id="hero-gallery-status" class="hero-gallery-status">جارٍ تحميل صور الأرشيف…</p>
+          <div class="hero-gallery-controls" hidden>
+            <button type="button" id="hero-next">بدّل الصور</button>
+            <button type="button" id="hero-playback">إيقاف التبديل</button>
+          </div>
         </div>
       </div>
     </section>

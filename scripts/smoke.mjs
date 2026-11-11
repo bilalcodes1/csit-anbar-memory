@@ -103,6 +103,11 @@ function uploadForm({ replace = false, valid = true } = {}) {
 await request('/api/admin/upload', { method: 'POST', cookie: admin, body: uploadForm({ valid: false }), status: 415 });
 await request('/api/admin/upload', { method: 'POST', cookie: admin, body: uploadForm(), status: 201 });
 await request('/api/admin/upload', { method: 'POST', cookie: admin, body: uploadForm() });
+async function hasHighlight() {
+  const photos = await (await request('/api/archive-highlights')).json();
+  return photos.some(photo => photo.year === year && photo.url === '/media/' + key);
+}
+assert.equal(await hasHighlight(), false);
 await request('/media/' + key, { status: 404 });
 await request('/media/' + key, { cookie: admin });
 await request('/api/admin/batches/' + batch.id, {
@@ -113,10 +118,12 @@ await request('/api/admin/albums', {
   method: 'PATCH', cookie: admin, body: { ...albumFields, published: false }
 });
 assert.deepEqual((await (await request('/api/batches/' + year)).json()).albums, []);
+assert.equal(await hasHighlight(), false);
 await request('/media/' + key, { status: 404 });
 await request('/api/admin/albums', {
   method: 'PATCH', cookie: admin, body: { ...albumFields, published: true }
 });
+assert.equal(await hasHighlight(), true);
 const published = await (await request('/api/batches/' + year)).json();
 assert.deepEqual(published.students, ['اسم اختبار منشور']);
 assert.equal(published.albums[0].photos.length, 1);
@@ -143,6 +150,7 @@ await request('/api/admin/photos', {
 });
 found = (await findStudent('اسم اختبار')).students.filter(student => student.year === year);
 assert.deepEqual(found[0].albums, []);
+assert.equal(await hasHighlight(), false);
 await request('/api/admin/photos', {
   method: 'PATCH', cookie: admin, body: { id: photoId, published: true }
 });
