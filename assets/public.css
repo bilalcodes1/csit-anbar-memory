@@ -88,3 +88,27 @@ figure img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius:
   nav { gap: .65rem; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+.privacy-page {
+  background: var(--archive-page);
+  color: var(--archive-text);
+  font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif;
+}
+.privacy-page h1, .privacy-page h2 { font-family: 'Noto Kufi Arabic', 'IBM Plex Sans Arabic', sans-serif; }
+.privacy-page .privacy-bar {
+  position: sticky;
+  inset-block-start: .75rem;
+  z-index: 2;
+  width: min(70rem, calc(100% - 1.5rem));
+  margin: .75rem auto 0;
+  padding: .35rem .65rem;
+  background: none;
+}
+.privacy-bar .bar { min-height: 48px; }
+.privacy-bar .brand { color: inherit; font-weight: 700; }
+.privacy-bar .brand img { width: 38px; height: 38px; padding: .3rem; border-radius: 50%; background: #0b2033; }
+.privacy-page .archive { width: min(100% - 2rem, 49rem); }
+.privacy-page .eyebrow { color: var(--archive-accent); }
+.privacy-page .detail-section { border-color: var(--archive-line); }
+.privacy-page .detail-section h2 { font-size: clamp(1.25rem, 3vw, 1.75rem); }
+.privacy-return { margin-block-start: 1.5rem; }

@@ -90,15 +90,19 @@ function render() {
   status.textContent = visible.length ? 'الدفعات المعروضة: ' + visible.length
     : batches.length ? 'لا توجد دفعات تطابق البحث.' : 'لا توجد دفعات منشورة حاليًا.';
   grid.innerHTML = visible.map(b => `
-        <article class="year-card group relative overflow-hidden rounded-3xl bg-white shadow-lg" data-type="${b.type}">
+        <article class="year-card group relative overflow-hidden rounded-3xl archive-paper shadow-lg" data-type="${b.type}">
           <a href="/batch/${b.year}" data-year="${b.year}" class="relative block h-80 w-full overflow-hidden bg-gradient-to-br ${b.tone} text-right">${photo(b.image, b.title, "photo-frame h-full w-full object-cover")}<span class="photo-shine absolute inset-0"></span><div class="absolute inset-0 bg-gradient-to-t from-[#102a43]/95 via-[#102a43]/20 to-transparent"></div><div class="absolute inset-x-6 top-6 flex items-start justify-between text-white"><span class="rounded-full border border-white/25 bg-black/10 px-3 py-1 text-xs">${b.label}</span><span class="display text-6xl font-bold text-[#e3c98d]">${b.year}</span></div><div class="absolute inset-x-6 bottom-6 text-white"><i data-lucide="camera" class="mb-3 h-7 w-7 text-[#e3c98d]"></i><h3 class="display text-2xl font-bold">${escapeHtml(b.title)}</h3><p class="mt-2 text-sm text-white/75">${escapeHtml(b.quote)}</p>${isIllustration(b.image) ? illustrationLabel : ''}</div></a>
-          <div class="flex items-center justify-between gap-4 p-5"><span class="text-sm text-slate-500">${b.albums.length} ألبوم</span><a href="/batch/${b.year}" data-year="${b.year}" class="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#eee8da] px-4 py-2 text-sm font-bold text-[#102a43] transition hover:bg-[#c8a96b]">افتح الصورة <i data-lucide="maximize-2" class="h-4 w-4"></i></a></div>
+          <div class="flex items-center justify-between gap-4 p-5"><span class="text-sm text-slate-500">${b.albums.length} ألبوم</span><a href="/batch/${b.year}" data-year="${b.year}" class="glass-button shrink-0 text-sm">افتح الصورة <i data-lucide="maximize-2" class="h-4 w-4"></i></a></div>
         </article>`).join('');
   grid.querySelectorAll('.year-card').forEach(card => reveal?.observe(card));
   icons();
 }
 
 function showDetail(b) {
+  const share = document.getElementById('share-batch');
+  document.getElementById('batch-toolbar-title').textContent = 'دفعة ' + b.year;
+  share.hidden = false;
+  share.onclick = () => shareBatch(b);
   const cover = b.image ? { title: 'غلاف الدفعة', photos: [{ url: b.image, alt_text: isIllustration(b.image) ? 'مشهد تخرج توضيحي' : b.title,
     caption: isIllustration(b.image) ? 'صورة توضيحية للتخرج' : '' }] } : null;
   const albums = b.albums.map(album => ({
@@ -112,15 +116,14 @@ function showDetail(b) {
   modalContent.innerHTML = `
         <div class="overflow-hidden rounded-[1.7rem] bg-gradient-to-br ${b.tone} p-6 text-white md:p-8">
           <p class="text-sm font-bold tracking-widest text-[#e3c98d]">${b.label} · الألبوم السنوي الرقمي</p>
-          <div class="mt-3 flex flex-wrap items-end justify-between gap-4"><div><span class="display text-7xl font-bold text-[#e3c98d]">${b.year}</span><h2 id="detail-title" class="display mt-1 text-3xl font-bold">${escapeHtml(b.title)}</h2></div><div class="flex flex-wrap items-center gap-2"><button id="share-batch" class="inline-flex items-center gap-2 rounded-full bg-[#e3c98d] px-4 py-2 text-sm font-bold text-[#102a43] transition hover:bg-white"><i data-lucide="share-2" class="h-4 w-4"></i> مشاركة الدفعة</button><span class="rounded-full border border-white/20 px-4 py-2 text-sm text-white/75">أرشيف الدفعة</span></div></div>
+          <div class="mt-3"><span class="display text-6xl font-bold text-[#e3c98d]">${b.year}</span><h2 id="detail-title" class="display mt-1 text-3xl font-bold">${escapeHtml(b.title)}</h2></div>
           <p class="mt-5 max-w-xl text-lg leading-loose text-white/75">${escapeHtml(b.quote || b.description)}</p>
         </div>
-        <p id="share-feedback" role="status" class="break-all"></p>
-        <div class="mt-7 overflow-hidden rounded-3xl bg-white shadow-lg">${cover ? `<button type="button" id="batch-cover" class="block w-full" aria-label="عرض غلاف الدفعة">${photo(b.image, b.title, "max-h-[28rem] w-full object-cover")}</button>` : ''}<div class="flex flex-wrap items-center justify-between gap-3 p-5"><span class="text-sm text-slate-500">${b.students.length} أسماء منشورة</span>${isIllustration(b.image) ? illustrationLabel : ''}</div></div>
+        <div class="archive-cover mt-7 overflow-hidden rounded-3xl shadow-lg">${cover ? `<button type="button" id="batch-cover" class="block w-full" aria-label="عرض غلاف الدفعة">${photo(b.image, b.title, "max-h-[28rem] w-full object-cover")}</button>` : ''}<div class="flex flex-wrap items-center justify-between gap-3 p-5"><span class="text-sm text-slate-500">${b.students.length} أسماء منشورة</span>${isIllustration(b.image) ? illustrationLabel : ''}</div></div>
         <div class="mt-8 flex items-end justify-between gap-4"><div><p class="text-sm font-bold tracking-widest text-[#1f6f78]">أقسام الألبوم السنوي</p><h3 class="display mt-2 text-3xl font-bold text-[#102a43]">استكشف فصول الدفعة</h3></div><span class="text-sm text-slate-500">${albums.length} أقسام</span></div>
         <div class="mt-5 grid gap-4 sm:grid-cols-2">${albums.map((album, index) => `<button data-album="${index}" class="album-tile group relative h-44 overflow-hidden rounded-2xl bg-[#102a43] text-right shadow-md">${photo(album.image, album.title, "h-full w-full object-cover opacity-70")}<span class="absolute inset-0 bg-gradient-to-t from-[#102a43] via-[#102a43]/25 to-transparent"></span><span class="absolute inset-x-4 bottom-4 text-white"><i data-lucide="images" class="mb-2 h-5 w-5 text-[#e3c98d]"></i><strong class="block text-lg">${escapeHtml(album.title)}</strong><small class="text-white/70">${escapeHtml(album.subtitle)} · ${album.count}</small>${isIllustration(album.image) ? illustrationLabel : ''}</span></button>`).join('')}</div>
-        <div id="album-viewer" class="mt-7 hidden rounded-3xl border border-[#102a43]/10 bg-white p-5"><div class="flex items-center justify-between gap-4"><div><p class="text-xs font-bold tracking-widest text-[#1f6f78]">الألبوم المختار</p><h4 id="album-title" tabindex="-1" class="mt-1 text-xl font-bold text-[#102a43]"></h4></div><button id="album-close" type="button" class="rounded-full bg-[#eee8da] text-[#102a43]" aria-label="إغلاق الألبوم"><i data-lucide="x" class="h-5 w-5" aria-hidden="true"></i></button></div><div id="album-images" class="mt-4 grid grid-cols-2 gap-3"></div></div>
-    <section class="mt-7 rounded-3xl border border-[#102a43]/10 bg-white p-5">
+        <div id="album-viewer" class="mt-7 hidden rounded-3xl border p-5"><div class="flex items-center justify-between gap-4"><div><p class="text-xs font-bold tracking-widest text-[#1f6f78]">الألبوم المختار</p><h4 id="album-title" tabindex="-1" class="mt-1 text-xl font-bold text-[#102a43]"></h4></div><button id="album-close" type="button" class="glass-icon" aria-label="إغلاق الألبوم"><i data-lucide="x" class="h-5 w-5" aria-hidden="true"></i></button></div><div id="album-images" class="mt-4 grid grid-cols-2 gap-3"></div></div>
+    <section class="archive-students mt-7 rounded-3xl border p-5">
       <h3 class="display mb-2 text-xl font-bold text-[#102a43]">أسماء الطلبة</h3>
       ${b.students.length ? `<ul class="list-inside list-disc">${b.students.map(name => `<li>${escapeHtml(name)}</li>`).join('')}</ul>`
         : '<p class="text-sm text-slate-600">لا توجد أسماء منشورة لهذه الدفعة.</p>'}
@@ -156,7 +159,6 @@ function showDetail(b) {
     activeTile?.setAttribute('aria-expanded', 'false');
     activeTile?.focus();
   });
-  modalContent.querySelector('#share-batch').addEventListener('click', () => shareBatch(b));
   icons();
 }
 
@@ -180,6 +182,9 @@ async function shareBatch(batch) {
 
 async function openBatch(year) {
   detailRequest?.abort();
+  document.getElementById('share-batch').hidden = true;
+  document.getElementById('share-feedback').replaceChildren();
+  document.getElementById('batch-toolbar-title').textContent = '';
   const controller = new AbortController();
   detailRequest = controller;
   modalContent.innerHTML = '<h2 id="detail-title" class="display text-xl font-bold" role="status">جارٍ تحميل الدفعة…</h2>';
@@ -240,6 +245,7 @@ const fullPhoto = document.getElementById('full-photo');
 const photoTitle = document.getElementById('photo-title');
 const photoCaption = document.getElementById('photo-caption');
 const photoCount = document.getElementById('photo-count');
+const photoSeek = document.getElementById('photo-seek');
 const prevPhoto = document.getElementById('photo-prev');
 const nextPhoto = document.getElementById('photo-next');
 let photoAlbum;
@@ -261,8 +267,13 @@ function displayPhoto() {
     photoTransition = fullPhoto.animate?.([{ opacity: .55 }, { opacity: 1 }], { duration: 220, easing: 'ease-out' });
   }
   photoCaption.textContent = entry.caption || '';
-  photoCount.textContent = `${photoIndex + 1} / ${photoAlbum.photos.length}`;
-  prevPhoto.disabled = nextPhoto.disabled = photoAlbum.photos.length < 2;
+  const count = photoAlbum.photos.length;
+  photoCount.textContent = `${photoIndex + 1} / ${count}`;
+  photoSeek.max = count;
+  photoSeek.value = photoIndex + 1;
+  photoSeek.style.setProperty('--glass-range-progress', (count > 1 ? photoIndex / (count - 1) * 100 : 0) + '%');
+  photoSeek.setAttribute('aria-valuetext', `الصورة ${photoIndex + 1} من ${count}`);
+  photoSeek.hidden = prevPhoto.disabled = nextPhoto.disabled = count < 2;
 }
 
 function openPhoto(album, index) {
@@ -280,8 +291,12 @@ function stepPhoto(delta) {
 
 prevPhoto.addEventListener('click', () => stepPhoto(-1));
 nextPhoto.addEventListener('click', () => stepPhoto(1));
+photoSeek.addEventListener('input', () => {
+  photoIndex = photoSeek.valueAsNumber - 1;
+  displayPhoto();
+});
 photoModal.addEventListener('keydown', event => {
-  if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+  if (event.target === photoSeek || !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
   event.preventDefault();
   stepPhoto(event.key === 'ArrowLeft' ? 1 : -1);
 });
@@ -291,7 +306,7 @@ photoModal.addEventListener('click', event => {
 let swipeStart;
 const stage = photoModal.querySelector('.photo-stage');
 stage.addEventListener('touchstart', event => {
-  const touch = event.touches.length === 1 ? event.touches[0] : null;
+  const touch = event.touches.length === 1 && !event.target.closest('.photo-navigation') ? event.touches[0] : null;
   swipeStart = touch && { x: touch.clientX, y: touch.clientY };
 }, { passive: true });
 stage.addEventListener('touchend', event => {
@@ -302,6 +317,7 @@ stage.addEventListener('touchend', event => {
   if (Math.abs(dx) >= 45 && Math.abs(dx) > Math.abs(dy) * 1.5) stepPhoto(dx > 0 ? 1 : -1);
   swipeStart = null;
 }, { passive: true });
+stage.addEventListener('touchcancel', () => { swipeStart = null; }, { passive: true });
 
 document.querySelectorAll('[data-reveal]').forEach(section => reveal?.observe(section));
 
