@@ -47,6 +47,7 @@ const deepLink = await request('/batch/2026');
 assert.match(await deepLink.text(), /id="batch-modal"/);
 await request('/admin');
 await request('/api/admin/overview', { status: 401 });
+await request('/api/admin/media', { status: 401 });
 await request('/api/activities', { status: 410 });
 await request('/api/batches/not-a-year', { status: 404 });
 
@@ -77,6 +78,9 @@ await request('/api/admin/batches/' + batch.id, {
 });
 await request('/api/admin/albums', {
   method: 'POST', cookie: admin, body: { batch_id: batch.id, slug: 'smoke', title: 'ألبوم اختبار', published: true }, status: 201
+});
+await request('/api/admin/albums', {
+  method: 'POST', cookie: admin, body: { batch_id: batch.id, slug: 'smoke', title: 'ألبوم مكرر' }, status: 409
 });
 await request('/api/admin/students', {
   method: 'POST', cookie: admin, body: { batch_id: batch.id, full_name: 'اسم اختبار منشور', published: true }, status: 201
@@ -111,14 +115,27 @@ assert.equal(await hasHighlight(), false);
 await request('/media/' + key, { status: 404 });
 await request('/media/' + key, { cookie: admin });
 await request('/api/admin/batches/' + batch.id, {
-  method: 'PATCH', cookie: admin, body: { ...batchData, published: true }
+  method: 'PATCH', cookie: admin, body: { ...batchData, cover_key: 'smoke/missing-' + run + '.png' }, status: 422
 });
+await request('/api/admin/batches/' + batch.id, {
+  method: 'PATCH', cookie: admin, body: { ...batchData, cover_key: key, published: false }
+});
+await request('/media/' + key, { status: 404 });
+await request('/api/admin/batches/' + batch.id, {
+  method: 'PATCH', cookie: admin, body: { ...batchData, cover_key: key, published: true }
+});
+assert.equal((await (await request('/api/batches/' + year)).json()).cover_url, '/media/' + key);
 const albumFields = { id: album.id, title: 'ألبوم اختبار' };
 await request('/api/admin/albums', {
   method: 'PATCH', cookie: admin, body: { ...albumFields, published: false }
 });
 assert.deepEqual((await (await request('/api/batches/' + year)).json()).albums, []);
 assert.equal(await hasHighlight(), false);
+await request('/media/' + key);
+await request('/api/admin/batches/' + batch.id, {
+  method: 'PATCH', cookie: admin, body: { ...batchData, cover_key: '', published: true }
+});
+assert.equal((await (await request('/api/batches/' + year)).json()).cover_url, null);
 await request('/media/' + key, { status: 404 });
 await request('/api/admin/albums', {
   method: 'PATCH', cookie: admin, body: { ...albumFields, published: true }
@@ -170,11 +187,29 @@ assert.equal((await (await request('/api/batches/' + year)).json()).albums[0].ph
 await request('/api/admin/users', {
   method: 'POST', cookie: admin, body: { username: editorName, password, name: 'مشرف اختبار محلي' }, status: 201
 });
+await request('/api/admin/users', {
+  method: 'POST', cookie: admin, body: { username: editorName, password, name: 'حساب مكرر' }, status: 409
+});
 const editor = cookie(await request('/api/auth/login', {
   method: 'POST', body: { username: editorName, password }
 }));
 await request('/api/admin/users', { cookie: editor, status: 403 });
 await request('/api/admin/media', { method: 'DELETE', cookie: editor, body: { key }, status: 403 });
+await request('/api/admin/albums', { method: 'DELETE', cookie: editor, body: { id: album.id }, status: 403 });
+await request('/api/admin/students', { method: 'DELETE', cookie: editor, body: { id: studentIds[0] }, status: 403 });
+await request('/api/admin/batches/' + batch.id, { method: 'DELETE', cookie: editor, status: 403 });
+await request('/api/admin/media', { method: 'DELETE', cookie: admin, body: { key: key + '!' }, status: 422 });
+await request('/media/' + key);
+await request('/api/admin/students', {
+  method: 'PATCH', cookie: admin, body: { id: studentIds[0], full_name: '  ' }, status: 422
+});
+const editorId = (await (await request('/api/auth/me', { cookie: editor })).json()).id;
+const editorDevice = await (await request('/api/auth/device', { method: 'POST', cookie: editor, status: 201 })).json();
+await request('/api/admin/users', { method: 'PATCH', cookie: admin, body: { id: editorId, active: false } });
+await request('/api/auth/me', { cookie: editor, status: 401 });
+await request('/api/admin/users', { method: 'PATCH', cookie: admin, body: { id: editorId, active: true } });
+await request('/api/auth/me', { cookie: editor, status: 401 });
+await request('/api/auth/device', { method: 'PUT', body: { token: editorDevice.token }, status: 403 });
 const device = await (await request('/api/auth/device', {
   method: 'POST', cookie: admin, body: { label: 'جهاز اختبار محلي' }, status: 201
 })).json();
@@ -191,7 +226,10 @@ if (!process.env.ARCHIVE_KEEP_FIXTURES) {
   await request('/media/' + key, { status: 404 });
   await request('/api/admin/batches/' + batch.id, { method: 'DELETE', cookie: admin });
 }
-await request('/api/auth/logout', { method: 'POST', cookie: editor, status: [200, 204] });
-await request('/api/auth/me', { cookie: editor, status: 401 });
+const newEditor = cookie(await request('/api/auth/login', {
+  method: 'POST', body: { username: editorName, password }
+}));
+await request('/api/auth/logout', { method: 'POST', cookie: newEditor, status: [200, 204] });
+await request('/api/auth/me', { cookie: newEditor, status: 401 });
 if (process.env.ARCHIVE_KEEP_FIXTURES) console.log('Fixture batch:', year);
 console.log(`Passed ${checks} HTTP checks with D1 and R2.`);

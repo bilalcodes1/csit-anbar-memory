@@ -1,4 +1,5 @@
 import { getSession } from "../api/auth/_session.js";
+import { isImageType } from "../_images.js";
 
 export async function onRequestGet({ env, request, params }) {
   const headers = new Headers({
@@ -23,7 +24,7 @@ export async function onRequestGet({ env, request, params }) {
   const object = await env.IMAGES.get(key);
   if (!object) return new Response(null, { status: 404, headers });
   const type = object.httpMetadata?.contentType;
-  if (!["image/jpeg", "image/png", "image/webp"].includes(type)) {
+  if (!isImageType(type)) {
     return new Response(null, { status: 415, headers });
   }
   headers.set("Content-Type", type);

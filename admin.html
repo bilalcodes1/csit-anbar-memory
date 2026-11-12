@@ -12,6 +12,8 @@
   <link rel="stylesheet" href="/assets/liquid-glass.css">
   <link rel="stylesheet" href="/assets/admin.css">
   <link rel="stylesheet" href="/assets/zakiglass.css">
+  <script src="/assets/liquid-glass.js" defer></script>
+  <script src="/assets/admin-cover.js" defer></script>
   <script src="/assets/zakiglass.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,24 +25,125 @@
 <div id="modal-root"></div>
 <script>
 const root=document.getElementById('root'),toastEl=document.getElementById('toast');
-let state={user:null,view:'overview',data:null,selectedBatch:null,uploadQueue:[],devices:[]};
+function newSession() {
+  return {
+    user: null, view: 'overview', data: null, selectedBatch: null, mediaCursor: '', devices: [],
+    uploadQueue: [], uploadSettings: { album: '', prefix: '', published: false }
+  };
+}
+let state = newSession();
 const icons={grid:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',layers:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>',image:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>',users:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',settings:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="m19.4 15 .1.1a2 2 0 1 1-2.8 2.8l-.1-.1a2 2 0 0 0-3.4 1.4v.3a2 2 0 1 1-4 0v-.2A2 2 0 0 0 5.8 18l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A2 2 0 0 0 1.6 12a2 2 0 1 1 0-4h.2a2 2 0 0 0 1.4-3.4l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A2 2 0 0 0 9.5.4V.2a2 2 0 1 1 4 0v.2a2 2 0 0 0 3.4 1.4l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A2 2 0 0 0 21.1 8h.3a2 2 0 1 1 0 4h-.2a2 2 0 0 0-1.8 3Z"/></svg>',menu:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>',plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',upload:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4m0 0L7 9m5-5 5 5"/><path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>',close:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 6 12 12M18 6 6 18"/></svg>',edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 20 9-9-3-3-9 9-1 4 4-1Z"/><path d="m15 5 3 3"/></svg>',trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 14h10l1-14M9 7V4h6v3"/></svg>',refresh:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 5v4h4"/><path d="M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4"/></svg>',qr:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z"/></svg>'};
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const fmtBytes=n=>{n=Number(n||0);if(!n)return'0 ب';const u=['ب','ك.ب','م.ب','ج.ب'];let i=0;while(n>=1024&&i<3){n/=1024;i++}return`${n.toFixed(i?1:0)} ${u[i]}`};
 const fmtDate=v=>v?new Date(v.includes('T')?v:v.replace(' ','T')+'Z').toLocaleString('ar-IQ',{dateStyle:'medium',timeStyle:'short'}):'—';
 function toast(msg,type='info'){toastEl.textContent=msg;toastEl.style.background=type==='error'?'#9b251c':type==='success'?'#147d4f':'#102a43';toastEl.classList.add('show');clearTimeout(toastEl._t);toastEl._t=setTimeout(()=>toastEl.classList.remove('show'),3500)}
-async function api(url,opt={}){const r=await fetch(url,{credentials:'same-origin',...opt});const b=r.status===204?null:await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(Error(b.error||'تعذر تنفيذ الطلب'),{status:r.status});return b}
-function login(error=''){root.innerHTML=`<main class="login-wrap"><section class="login-card"><div class="login-brand"><img src="assets/brand/memory-icon.svg"><div><strong>ذاكرة الكلية</strong><small class="muted">لوحة الإدارة الأكاديمية</small></div></div><h1>مرحبًا بعودتك</h1><p>أدر الأرشيف والدفعات والصور والأسماء من مساحة واحدة آمنة.</p><form id="loginForm" class="login-form"><div class="field"><label for="loginUsername">اسم المستخدم<span class="hint">اكتب اسم المستخدم المسجل في النظام.</span></label><input class="input" id="loginUsername" name="username" required autocomplete="username"></div><div class="field"><label for="loginPassword">كلمة المرور<span class="hint">أدخل كلمة مرور الحساب كما هي.</span></label><input class="input" type="password" id="loginPassword" name="password" required autocomplete="current-password" placeholder="كلمة المرور"></div><button class="btn btn-primary" type="submit">دخول إلى لوحة التحكم</button></form>${error?`<div class="login-note">${esc(error)}</div>`:`<div class="login-note">يمكنك استخدام باركود الدخول السريع من أجهزتك الموثوقة.</div>`}</section></main>`;document.getElementById('loginForm').onsubmit=async e=>{e.preventDefault();const btn=e.target.querySelector('button');btn.disabled=true;try{const d=await api('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.fromEntries(new FormData(e.target)))});state.user=d.user;await boot()}catch(err){login(err.message)}finally{btn.disabled=false}}}
-async function boot(){try{state.data=await api('/api/admin/overview');state.devices=await api('/api/auth/device');render()}catch(e){login(e.message)}}
-function layout(){return`<div class="shell"><aside id="sidebar" class="sidebar glass-surface glass-on-media"><div class="brand"><img src="assets/brand/memory-icon.svg"><div><strong>ذاكرة الكلية</strong><span>الإدارة والتحرير</span></div></div><nav class="nav" aria-label="أقسام لوحة الإدارة">${[['overview','grid','نظرة عامة'],['batches','layers','الدفعات والألبومات'],['media','image','مكتبة الصور'],...(state.user.role==='admin'?[['users','users','المستخدمون']]:[]),['settings','settings','الحساب والأمان']].map(([id,ic,label])=>`<button data-nav="${id}" class="${state.view===id?'active':''}" ${state.view===id?'aria-current="page"':''}>${icons[ic]}<span>${label}</span></button>`).join('')}</nav><div class="sidebar-footer">جلسة آمنة · ${esc(state.user.name)}<br><span>آخر مزامنة: الآن</span></div></aside><div id="sidebarScrim" class="sidebar-scrim" aria-hidden="true"></div><div class="main"><header class="topbar glass-surface"><div class="topbar-heading"><button id="menuBtn" aria-label="فتح قائمة الإدارة" aria-controls="sidebar" aria-expanded="false" class="menu-btn glass-icon">${icons.menu}</button><div class="topbar-title"><h1 tabindex="-1">${pageTitle()}</h1></div></div><div class="top-actions"><button id="refreshBtn" class="btn btn-soft btn-small" aria-label="تحديث">${icons.refresh} <span class="top-action-label">تحديث</span></button><div class="avatar">${esc((state.user.name||'م')[0])}</div><button id="logoutBtn" class="btn btn-soft btn-small">خروج</button></div></header><main class="content">${pages()}</main></div></div>`}
+async function api(url, options = {}) {
+  const session = state;
+  const response = await fetch(url, { credentials: 'same-origin', ...options });
+  const body = response.status === 204 ? null : await response.json().catch(() => null);
+  if (!response.ok) {
+    if (response.status === 401 && state === session && state.user &&
+        (url.startsWith('/api/admin/') || url === '/api/auth/device')) {
+      endSession('انتهت الجلسة. سجّل الدخول مرة أخرى.');
+    }
+    throw Object.assign(Error(body?.error || 'تعذر تنفيذ الطلب'), { status: response.status });
+  }
+  if (body === null && response.status !== 204) throw Error('تعذّر قراءة استجابة الخادم');
+  return body;
+}
+function sendJSON(url, method, data) {
+  return api(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+}
+function adminBrand() {
+  return `<div class="memory-brand">
+    <span class="memory-brand-mark"><img src="/assets/brand/memory-icon.svg" alt=""></span>
+    <span class="memory-brand-name"><strong>ذاكرة الكلية</strong><small>لوحة الإدارة الأكاديمية</small></span>
+  </div>`;
+}
+function submitButton(label) {
+  return `<div class="admin-submit span-2" data-zaki-submit>
+    <button class="btn btn-primary" type="submit" data-admin-fallback>${esc(label)}</button>
+    <span data-admin-control></span>
+  </div>`;
+}
+function setFormBusy(form, busy) {
+  form.toggleAttribute('aria-busy', busy);
+  form.querySelectorAll('button[type="submit"]').forEach(button => { button.disabled = busy; });
+}
+function login(error = '') {
+  root.innerHTML = `<main class="login-wrap"><section class="login-card glass-surface">
+    ${adminBrand()}
+    <h1>مرحبًا بعودتك</h1>
+    <p>أدر الدفعات والألبومات والصور وأسماء الطلبة.</p>
+    <form id="loginForm" class="login-form">
+      <div class="field"><label for="loginUsername">اسم المستخدم</label>
+        <input class="input" id="loginUsername" name="username" required autocomplete="username" dir="ltr"></div>
+      <div class="field"><label for="loginPassword">كلمة المرور</label>
+        <input class="input" type="password" id="loginPassword" name="password" required autocomplete="current-password"></div>
+      <div class="login-note" role="alert" ${error ? '' : 'hidden'}>${esc(error)}</div>
+      ${submitButton('دخول إلى لوحة التحكم')}
+    </form>
+  </section></main>`;
+  root.dispatchEvent(new Event('admin:render'));
+  const form = document.getElementById('loginForm');
+  form.onsubmit = async event => {
+    event.preventDefault();
+    if (form.hasAttribute('aria-busy')) return;
+    const feedback = form.querySelector('[role="alert"]');
+    feedback.hidden = true;
+    setFormBusy(form, true);
+    try {
+      const { user } = await sendJSON('/api/auth/login', 'POST', Object.fromEntries(new FormData(form)));
+      state.user = user;
+      await boot();
+    } catch (error) {
+      feedback.textContent = error.message;
+      feedback.hidden = false;
+      form.elements.password.value = '';
+      form.elements.password.focus();
+    } finally {
+      setFormBusy(form, false);
+    }
+  };
+}
+function endSession(message) {
+  document.querySelector('#modal-root dialog[open]')?.close();
+  state = newSession();
+  login(message);
+}
+async function loadAdminData() {
+  const session = state;
+  const load = session.dataLoad = (session.dataLoad || 0) + 1;
+  const [data, devices] = await Promise.all([api('/api/admin/overview'), api('/api/auth/device')]);
+  if (state !== session || session.dataLoad !== load) return false;
+  Object.assign(state, { user: data.user, data, devices, mediaCursor: '' });
+  if (state.view === 'users' && state.user.role !== 'admin') state.view = 'overview';
+  if (!data.batches.some(batch => batch.id === state.selectedBatch)) state.selectedBatch = null;
+  render();
+  return true;
+}
+async function boot() {
+  const session = state;
+  try { await loadAdminData(); }
+  catch (error) { if (state === session) endSession(error.message); }
+}
+function layout(){return`<div class="shell"><aside id="sidebar" class="sidebar glass-surface glass-on-media">${adminBrand()}<nav class="nav" aria-label="أقسام لوحة الإدارة">${[['overview','grid','نظرة عامة'],['batches','layers','الدفعات والألبومات'],['media','image','مكتبة الصور'],...(state.user.role==='admin'?[['users','users','المستخدمون']]:[]),['settings','settings','الحساب والأمان']].map(([id,ic,label])=>`<button data-nav="${id}" class="${state.view===id?'active':''}" ${state.view===id?'aria-current="page"':''}>${icons[ic]}<span>${label}</span></button>`).join('')}</nav><div class="sidebar-footer">جلسة آمنة · ${esc(state.user.name)}<br><span>آخر مزامنة: الآن</span></div></aside><div id="sidebarScrim" class="sidebar-scrim" aria-hidden="true"></div><div class="main"><header class="topbar glass-surface" data-glass-backdrop><div class="topbar-heading"><button id="menuBtn" aria-label="فتح قائمة الإدارة" aria-controls="sidebar" aria-expanded="false" class="menu-btn glass-icon">${icons.menu}</button><div class="topbar-title"><h1 tabindex="-1">${pageTitle()}</h1></div></div><div class="top-actions"><button id="refreshBtn" class="btn btn-soft btn-small" aria-label="تحديث">${icons.refresh} <span class="top-action-label">تحديث</span></button><div class="avatar">${esc((state.user.name||'م')[0])}</div><button id="logoutBtn" class="btn btn-soft btn-small">خروج</button></div></header><main class="content">${pages()}</main></div></div>`}
 function pageTitle(){return({overview:'نظرة عامة',batches:'الدفعات والألبومات',media:'مكتبة الصور والرفع',users:'المستخدمون والصلاحيات',settings:'الحساب والأمان'})[state.view]}
-function pages(){return`<section class="page ${state.view==='overview'?'active':''}">${overviewPage()}</section><section class="page ${state.view==='batches'?'active':''}">${batchesPage()}</section><section class="page ${state.view==='media'?'active':''}">${mediaPage()}</section><section class="page ${state.view==='users'?'active':''}">${state.user.role==='admin'?usersPage():''}</section><section class="page ${state.view==='settings'?'active':''}">${settingsPage()}</section>`}
+function pages() {
+  const page = { overview: overviewPage, batches: batchesPage, media: mediaPage, users: usersPage, settings: settingsPage }[state.view];
+  return `<section class="page active">${page()}</section>`;
+}
 function overviewPage(){const s=state.data.counts||{};return`<div class="grid stats"><div class="card stat"><span class="stat-label">إجمالي الدفعات</span><strong class="stat-value">${s.batches||0}</strong><span class="stat-icon">${icons.layers}</span></div><div class="card stat"><span class="stat-label">الألبومات</span><strong class="stat-value">${s.albums||0}</strong><span class="stat-icon">${icons.grid}</span></div><div class="card stat"><span class="stat-label">الصور الموثقة</span><strong class="stat-value">${s.photos||0}</strong><span class="stat-icon">${icons.image}</span></div><div class="card stat"><span class="stat-label">حجم التخزين</span><strong class="stat-value stat-storage">${fmtBytes(s.storage_bytes)}</strong><span class="stat-icon">${icons.upload}</span></div></div><div class="split" style="margin-top:22px"><section class="card"><div class="section-head" style="padding:0 20px"><div><h2>آخر الدفعات</h2><p>أحدث الدفعات في الأرشيف</p></div><button class="btn btn-soft btn-small" data-nav="batches">إدارة الدفعات</button></div><div>${(state.data.batches||[]).slice(0,5).map(batchRow).join('')||empty('لا توجد دفعات بعد')}</div></section><section class="card"><div class="section-head" style="padding:0 20px"><div><h2>آخر العمليات</h2><p>سجل النشاطات الإدارية</p></div></div><div>${(state.data.audit||[]).slice(0,7).map(a=>`<div class="batch-row"><div class="row-copy"><strong>${esc(actionLabel(a.action))}</strong><small>${esc(entityLabel(a.entity_type))} · ${esc(a.name||a.username||'النظام')}</small></div><small class="muted">${fmtDate(a.created_at)}</small></div>`).join('')||empty('لا توجد عمليات بعد')}</div></section></div>`}
 const entityLabel=type=>({session:'جلسة',batch:'دفعة',album:'ألبوم',student:'اسم طالب',photo:'صورة',image:'ملف صورة',user:'حساب'})[type]||type;
 function actionLabel(a){return({create:'إضافة',update:'تعديل',delete:'حذف',upload:'رفع',login:'تسجيل دخول'})[a]||a}
 function empty(t){return`<div class="empty">${esc(t)}</div>`}
 function batchRow(b){const albums=b.albums||[],photos=albums.reduce((n,a)=>n+(a.photos||[]).length,0);return`<div class="batch-row"><div class="batch-main"><div class="year-chip">${esc(b.year)}</div><div><strong>${esc(b.title)}</strong><small>${albums.length} ألبومات · ${photos} صور · ${b.published?'<span class="badge badge-green">منشورة</span>':'<span class="badge badge-gray">مسودة</span>'}</small></div></div><div class="batch-actions"><button class="btn btn-soft btn-small" data-edit-batch="${b.id}">${icons.edit} تعديل</button><button class="btn btn-soft btn-small" data-open-batch="${b.id}">التفاصيل</button>${state.user.role==='admin'?`<button class="btn btn-danger btn-small" data-delete-batch="${b.id}">حذف</button>`:''}</div></div>`}
-function batchesPage(){return`<div class="section-head"><div><h2>الدفعات والألبومات</h2><p>تحكم كامل بالمحتوى المنشور والمسودات والأسماء.</p></div><button class="btn btn-primary admin-create-batch" data-new-batch>${icons.plus} إضافة دفعة</button></div><section class="card">${(state.data.batches||[]).map(batchRow).join('')||empty('ابدأ بإضافة أول دفعة')}</section>${state.selectedBatch?batchDetails(state.selectedBatch):''}`}
+function batchesPage() {
+  if (state.selectedBatch) return batchDetails(state.selectedBatch);
+  return `<div class="section-head"><div><h2>الدفعات والألبومات</h2><p>تحكم كامل بالمحتوى المنشور والمسودات والأسماء.</p></div>
+    <button class="btn btn-primary admin-create-batch" data-new-batch>${icons.plus} إضافة دفعة</button></div>
+    <section class="card">${(state.data.batches || []).map(batchRow).join('') || empty('ابدأ بإضافة أول دفعة')}</section>`;
+}
 function albumTagList(album) {
   if (!album.photos?.length) return '';
   return `<details class="album-tag-list"><summary>ربط أسماء بصور الألبوم (${album.photos.length})</summary>
@@ -49,30 +152,124 @@ function albumTagList(album) {
       <button type="button" class="btn btn-soft btn-small" data-tag-photo="${photo.id}">تعديل الأسماء (${photo.student_ids?.length || 0})</button>
     </div>`).join('')}</details>`;
 }
-function batchDetails(id){const b=(state.data.batches||[]).find(x=>x.id===Number(id));if(!b)return'';return`<div class="section-head"><div><h2>تفاصيل دفعة ${esc(b.year)}</h2><p>${esc(b.title)} · ${b.published?'منشورة':'مسودة'}</p></div><button class="btn btn-gold" data-upload-for="${b.id}">${icons.upload} رفع صور لهذه الدفعة</button></div><div class="split"><section class="card"><div class="section-head" style="padding:0 20px"><div><h2>الألبومات</h2><p>أنشئ أقسام الذكريات ورتّبها.</p></div><button class="btn btn-soft btn-small" data-new-album="${b.id}">${icons.plus} ألبوم</button></div><div>${(b.albums||[]).map(a=>`<div class="batch-row"><div><strong>${esc(a.title)}</strong><small>${esc(a.subtitle||'بدون وصف')} · ${a.photos_count||0} صور · ${a.published?'منشور':'مسودة'}</small></div><div class="batch-actions"><button class="btn btn-soft btn-small" aria-label="تعديل ${esc(a.title)}" data-edit-album="${a.id}">${icons.edit}</button>${state.user.role==='admin'?`<button class="btn btn-danger btn-small" aria-label="حذف ${esc(a.title)}" data-delete-album="${a.id}">${icons.trash}</button>`:''}</div></div>${albumTagList(a)}`).join('')||empty('لا توجد ألبومات')}</div></section><section class="card"><div class="section-head" style="padding:0 20px"><div><h2>أسماء الطلبة</h2><p>أضف الأسماء مع التحكم بالنشر.</p></div><button class="btn btn-soft btn-small" data-new-student="${b.id}">${icons.plus} اسم</button></div><div>${(b.students||[]).map(s=>`<div class="batch-row"><div><strong>${esc(s.full_name)}</strong><small>${s.published?'<span class="badge badge-green">منشور</span>':'<span class="badge badge-gray">مسودة</span>'}</small></div><div class="batch-actions"><button class="btn btn-soft btn-small" data-edit-student="${s.id}">${icons.edit}</button><button class="btn btn-danger btn-small" data-delete-student="${s.id}">${icons.trash}</button></div></div>`).join('')||empty('لا توجد أسماء')}</div></section></div>`}
-function mediaPage(){const files=state.data.media?.objects||[],counts=state.data.counts||{};return`<div class="section-head"><div><h2>مكتبة الصور والرفع الجماعي</h2><p>ارفع حتى 50 صورة في الدفعة الواحدة مع متابعة مستقلة لكل ملف.</p></div><button class="btn btn-soft" data-refresh-media>${icons.refresh} تحديث المكتبة</button></div><div class="split"><section class="card" style="padding:20px"><div class="field"><label>الدفعة والألبوم<span class="hint">اختياري، لكن اختياره يربط الصور بألبوم ويعرضها للزوار.</span></label><select id="uploadAlbum" class="select" aria-label="اختيار الألبوم"><option value="">اختر الألبوم لربط الصور به</option>${(state.data.batches||[]).flatMap(b=>(b.albums||[]).map(a=>`<option value="${a.id}" data-batch="${b.id}">${esc(b.year)} · ${esc(a.title)}</option>`)).join('')}</select></div><div class="dropzone" id="dropzone" style="margin-top:14px">${icons.upload}<strong>اسحب الصور هنا أو اخترها من الجهاز</strong><p>JPG وPNG وWebP · حتى 50 ملفًا · حتى 20 ميغابايت للصورة</p><button class="btn btn-gold" id="chooseFiles">اختيار الصور</button><input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp" multiple class="hidden"></div><div class="toolbar" style="margin-top:14px"><input id="uploadPrefix" class="input" placeholder="مجلد اختياري مثل 2026/activities" aria-label="مجلد حفظ الصور"><div class="glass-switch-row" data-zaki-switch><label class="glass-switch-row" data-switch-fallback><input id="uploadPublished" type="checkbox" class="glass-switch" role="switch"> <span>نشر الصور فورًا</span></label><span data-switch-control></span></div><button class="btn btn-primary" id="startUploads" disabled>بدء الرفع</button><button class="btn btn-soft" id="clearUploads">مسح القائمة</button></div><div id="uploadList" class="upload-list"></div></section><section class="card" style="padding:20px"><div class="section-head" style="margin-top:0"><div><h2>إحصاءات التخزين</h2><p>إحصاءات الملفات المعروضة</p></div></div><div class="grid stats" style="grid-template-columns:repeat(2,1fr)"><div class="stat" style="background:#f8fafb"><span class="stat-label">الملفات</span><strong class="stat-value">${counts.media||files.length}</strong></div><div class="stat" style="background:#f8fafb"><span class="stat-label">الحجم</span><strong class="stat-value" style="font-size:22px">${fmtBytes(counts.storage_bytes)}</strong></div></div><div class="section-head"><div><h2>معاينة الملفات</h2><p>عينة من الصفحة الحالية</p></div></div><div class="media-grid">${files.slice(0,10).map(mediaCard).join('')||empty('لا توجد صور مرفوعة')}</div></section></div><section class="card" style="margin-top:18px;padding:20px"><div class="section-head" style="margin-top:0"><div><h2>كل الملفات</h2><p>ابحث ضمن الملفات المعروضة</p></div><input id="mediaSearch" class="input" style="max-width:280px" placeholder="بحث باسم الملف" aria-label="بحث باسم الملف"></div><div id="allMedia" class="media-grid">${files.map(mediaCard).join('')||empty('لا توجد صور')}</div><div class="toolbar" style="margin-top:14px"><button class="btn btn-soft" id="mediaFirst" ${state.mediaCursor?'':'hidden'}>الصفحة الأولى</button><button class="btn btn-soft" id="mediaNext" ${state.data.media?.pagination?.cursor?'':'hidden'}>الصفحة التالية</button></div></section>`}
-function mediaCard(f){return`<article class="media-card"><img src="${esc(f.url||`/media/${f.key}`)}" alt="${esc(f.key)}" loading="lazy"><div class="media-body"><strong title="${esc(f.key)}">${esc(f.key.split('/').pop())}</strong><small>${fmtBytes(f.size)} · ${fmtDate(f.uploaded)}</small><div class="media-actions">${state.user.role==='admin'?`<button class="btn btn-danger btn-small" data-delete-media="${esc(f.key)}">${icons.trash} حذف</button>`:''}</div></div></article>`}
-function usersPage(){const users=state.data.users||[];return`<div class="section-head"><div><h2>المستخدمون والصلاحيات</h2><p>إدارة المديرين والمشرفين وحالة الحساب.</p></div><button class="btn btn-primary" data-new-user>${icons.plus} إضافة مستخدم</button></div><section class="card table-wrap"><table class="table"><thead><tr><th>المستخدم</th><th>الدور</th><th>الحالة</th><th>تاريخ الإنشاء</th><th></th></tr></thead><tbody>${users.map(u=>`<tr><td><strong>${esc(u.name)}</strong><br><small class="muted">@${esc(u.username)}</small></td><td>${u.role==='admin'?'<span class="badge badge-gold">مدير</span>':'<span class="badge badge-gray">مشرف</span>'}</td><td>${u.active?'<span class="badge badge-green">نشط</span>':'<span class="badge badge-gray">معطل</span>'}</td><td>${fmtDate(u.created_at)}</td><td><div class="toolbar"><button class="btn btn-soft btn-small" data-edit-user="${u.id}">${icons.edit} تعديل</button><button class="btn btn-soft btn-small" data-toggle-user="${u.id}" data-role="${u.role}" data-active="${u.active?0:1}">${u.active?'تعطيل':'تفعيل'}</button><button class="btn btn-danger btn-small" data-delete-user="${u.id}">${icons.trash}</button></div></td></tr>`).join('')}</tbody></table></section>`}
-function settingsPage(){return`<div class="section-head"><div><h2>الحساب والأمان</h2><p>جلسة المستخدم والأجهزة الموثوقة والإعدادات الفعلية.</p></div></div><div class="split"><section class="card" style="padding:22px"><h2 class="display" style="font-size:19px">الحساب الحالي</h2><div class="batch-row" style="padding-right:0;padding-left:0"><div class="row-copy"><strong>${esc(state.user.name)}</strong><small><bdi dir="ltr">@${esc(state.user.username)}</bdi> · ${state.user.role==='admin'?'مدير':'مشرف'}</small></div><span class="badge badge-green">جلسة نشطة</span></div><button class="btn btn-danger" id="logoutSettings">تسجيل الخروج من هذا الجهاز</button></section><section class="card" style="padding:22px"><div class="section-head" style="margin-top:0"><div><h2>الدخول السريع</h2><p>باركودات هذا الحساب قابلة للإلغاء.</p></div><button class="btn btn-gold btn-small" id="newDevice">${icons.qr} توليد</button></div><div>${state.devices.filter(d=>!d.revoked).map(d=>`<div class="batch-row" style="padding-right:0;padding-left:0"><div class="row-copy"><strong>${esc(d.label)}</strong><small>آخر استخدام: ${fmtDate(d.last_used_at)}</small></div><button class="btn btn-danger btn-small" data-revoke-device="${d.id}">إلغاء</button></div>`).join('')||empty('لا توجد أجهزة موثوقة')}</div><div id="qrResult"></div></section></div>`}
-function mediaRecords(){const photos=(state.data.batches||[]).flatMap(b=>(b.albums||[]).flatMap(a=>(a.photos||[]).map(p=>({...p,album_title:a.title,batch_year:b.year}))));return(state.data.media?.objects||[]).map(file=>({...file,...(photos.find(photo=>photo.object_key===file.key)||{})}))}
-function selectedMedia(){return [...document.querySelectorAll('[data-media-select]:checked')].map(input=>input.value)}
-function enhanceMediaControls(){if(state.view!=='media')return;const files=mediaRecords(),container=document.getElementById('allMedia');if(!container)return;const toolbar=document.createElement('div');toolbar.className='toolbar media-selection-toolbar';toolbar.innerHTML='<label style="display:inline-flex;align-items:center;gap:7px"><input id="selectAllMedia" type="checkbox"> تحديد الكل</label><span id="selectedMediaCount" class="muted">لم يتم تحديد صور</span><button class="btn btn-soft btn-small" id="clearMediaSelection">إلغاء التحديد</button><button class="btn btn-danger btn-small" id="deleteSelectedMedia" disabled>حذف المحدد</button>';container.parentElement.insertBefore(toolbar,container);
-toolbar.hidden=state.user.role!=='admin';
-const search=document.getElementById('mediaSearch');
-search.oninput=()=>{
-  const query=search.value.trim().toLowerCase();
-  [...container.querySelectorAll('.media-card')].forEach((card,index)=>{
-    card.hidden=!files[index].key.toLowerCase().includes(query);
-    if(card.hidden) card.querySelector('[data-media-select]').checked=false;
-  });
-  document.getElementById('selectAllMedia').checked=false;
+function batchDetails(id){const b=(state.data.batches||[]).find(x=>x.id===Number(id));if(!b)return'';return`<div class="section-head"><div><h2 tabindex="-1" id="batch-details-title">تفاصيل دفعة ${esc(b.year)}</h2><p>${esc(b.title)} · ${b.published?'منشورة':'مسودة'}</p></div><div class="toolbar"><button class="btn btn-soft" data-nav="batches">كل الدفعات</button><button class="btn btn-gold" data-upload-for="${b.id}">${icons.upload} رفع صور</button></div></div><div class="split"><section class="card"><div class="section-head" style="padding:0 20px"><div><h2>الألبومات</h2><p>أنشئ أقسام الذكريات ورتّبها.</p></div><button class="btn btn-soft btn-small" data-new-album="${b.id}">${icons.plus} ألبوم</button></div><div>${(b.albums||[]).map(a=>`<div class="batch-row"><div><strong>${esc(a.title)}</strong><small>${esc(a.subtitle||'بدون وصف')} · ${(a.photos||[]).length} صور · ${a.published?'منشور':'مسودة'}</small></div><div class="batch-actions"><button class="btn btn-soft btn-small" aria-label="تعديل ${esc(a.title)}" data-edit-album="${a.id}">${icons.edit}</button>${state.user.role==='admin'?`<button class="btn btn-danger btn-small" aria-label="حذف ${esc(a.title)}" data-delete-album="${a.id}">${icons.trash}</button>`:''}</div></div>${albumTagList(a)}`).join('')||empty('لا توجد ألبومات')}</div></section><section class="card"><div class="section-head" style="padding:0 20px"><div><h2>أسماء الطلبة</h2><p>أضف الأسماء مع التحكم بالنشر.</p></div><button class="btn btn-soft btn-small" data-new-student="${b.id}">${icons.plus} اسم</button></div><div>${(b.students||[]).map(s=>`<div class="batch-row"><div><strong>${esc(s.full_name)}</strong><small>${s.published?'<span class="badge badge-green">منشور</span>':'<span class="badge badge-gray">مسودة</span>'}</small></div><div class="batch-actions"><button class="btn btn-soft btn-small" aria-label="تعديل الاسم ${esc(s.full_name)}" data-edit-student="${s.id}">${icons.edit}</button>${state.user.role==='admin'?`<button class="btn btn-danger btn-small" aria-label="حذف الاسم ${esc(s.full_name)}" data-delete-student="${s.id}">${icons.trash}</button>`:''}</div></div>`).join('')||empty('لا توجد أسماء')}</div></section></div>`}
+function mediaPage(){const files=mediaRecords(),counts=state.data.counts||{};return`<div class="section-head"><div><h2>مكتبة الصور والرفع الجماعي</h2><p>ارفع حتى 50 صورة في الدفعة الواحدة مع متابعة مستقلة لكل ملف.</p></div><button class="btn btn-soft" data-refresh-media>${icons.refresh} تحديث المكتبة</button></div><div class="split"><section class="card" style="padding:20px"><div class="field"><label for="uploadAlbum">الدفعة والألبوم<span class="hint">اختر ألبومًا لربط الصور به. تظهر للزوار حسب حالة النشر.</span></label><select id="uploadAlbum" class="select" aria-label="اختيار الألبوم"><option value="">اختر الألبوم لربط الصور به</option>${(state.data.batches||[]).flatMap(b=>(b.albums||[]).map(a=>`<option value="${a.id}" data-batch="${b.id}">${esc(b.year)} · ${esc(a.title)}</option>`)).join('')}</select></div><div class="dropzone" id="dropzone" style="margin-top:14px">${icons.upload}<strong>اسحب الصور هنا أو اخترها من الجهاز</strong><p>JPG وPNG وWebP · حتى 50 ملفًا · حتى 20 ميغابايت للصورة</p><button class="btn btn-gold" id="chooseFiles">اختيار الصور</button><input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp" multiple class="hidden"></div><div class="toolbar" style="margin-top:14px"><input id="uploadPrefix" class="input" placeholder="مجلد اختياري مثل 2026/activities" aria-label="مجلد حفظ الصور"><div class="glass-switch-row" data-zaki-switch><label class="glass-switch-row" data-admin-fallback><input id="uploadPublished" type="checkbox" class="glass-switch" role="switch"> <span>نشر الصور فورًا</span></label><span data-admin-control></span></div><button class="btn btn-primary" id="startUploads" disabled>بدء الرفع</button><button class="btn btn-soft" id="clearUploads">مسح القائمة</button></div><div id="uploadList" class="upload-list"></div></section><section class="card" style="padding:20px"><div class="section-head" style="margin-top:0"><div><h2>إحصاءات التخزين</h2><p>إحصاءات الملفات المعروضة</p></div></div><div class="grid stats storage-stats"><div class="stat"><span class="stat-label">الملفات</span><strong class="stat-value">${counts.media||files.length}</strong></div><div class="stat"><span class="stat-label">الحجم</span><strong class="stat-value" style="font-size:22px">${fmtBytes(counts.storage_bytes)}</strong></div></div><div class="section-head"><div><h2>معاينة الملفات</h2><p>عينة من الصفحة الحالية</p></div></div><div class="media-grid">${files.slice(0,10).map(file => mediaCard(file)).join('')||empty('لا توجد صور مرفوعة')}</div></section></div><section class="card" style="margin-top:18px;padding:20px"><div class="section-head" style="margin-top:0"><div><h2>كل الملفات</h2><p>ابحث ضمن الملفات المعروضة</p></div><input id="mediaSearch" class="input" type="search" style="max-width:280px" placeholder="بحث باسم الملف" aria-label="بحث باسم الملف"></div><div id="allMedia" class="media-grid">${files.map(file => mediaCard(file, true)).join('')||empty('لا توجد صور')}</div><div class="toolbar" style="margin-top:14px"><button class="btn btn-soft" id="mediaFirst" ${state.mediaCursor?'':'hidden'}>الصفحة الأولى</button><button class="btn btn-soft" id="mediaNext" ${state.data.media?.pagination?.cursor?'':'hidden'}>الصفحة التالية</button></div></section>`}
+function mediaCard(file, managed = false) {
+  const key = esc(file.key);
+  const filename = esc(file.key.split('/').at(-1));
+  const admin = state.user.role === 'admin';
+  return `<article class="media-card" data-media-key="${key}">
+    <img src="${esc(file.url)}" alt="${esc(file.alt_text || file.key.split('/').at(-1))}" loading="lazy" decoding="async">
+    ${managed && admin ? `<label class="media-select"><input type="checkbox" aria-label="تحديد ${filename}" value="${key}" data-media-select></label>` : ''}
+    <div class="media-body"><strong title="${key}"><bdi>${filename}</bdi></strong>
+      <small>${fmtBytes(file.size)} · ${fmtDate(file.uploaded)}</small>
+      <div class="media-actions">
+        <button class="btn btn-soft btn-small" data-view-media="${key}">${icons.image} عرض</button>
+        ${managed && file.id ? `<button class="btn btn-soft btn-small" data-edit-media="${file.id}">${icons.edit} تعديل</button>` : ''}
+        ${managed ? `<button class="btn btn-soft btn-small" data-replace-button>${icons.upload} استبدال</button>
+          <input type="file" accept="image/jpeg,image/png,image/webp" data-replace-media="${key}" hidden>` : ''}
+        ${admin ? `<button class="btn btn-danger btn-small" data-delete-media="${key}">${icons.trash} حذف</button>` : ''}
+      </div>
+    </div>
+  </article>`;
+}
+function usersPage() {
+  const users = state.data.users || [];
+  return `<div class="section-head"><div><h2>المستخدمون والصلاحيات</h2><p>إدارة المديرين والمشرفين وحالة الحساب.</p></div>
+    <button class="btn btn-primary" data-new-user>${icons.plus} إضافة مستخدم</button></div>
+    <section class="card table-wrap" tabindex="0" role="region" aria-label="جدول المستخدمين"><table class="table">
+      <thead><tr><th>المستخدم</th><th>الدور</th><th>الحالة</th><th>تاريخ الإنشاء</th><th>الإجراءات</th></tr></thead>
+      <tbody>${users.map(user => `<tr><td><div class="row-copy"><strong>${esc(user.name)}</strong><small><bdi dir="ltr">@${esc(user.username)}</bdi></small></div></td>
+        <td>${user.role === 'admin' ? '<span class="badge badge-gold">مدير</span>' : '<span class="badge badge-gray">مشرف</span>'}</td>
+        <td>${user.active ? '<span class="badge badge-green">نشط</span>' : '<span class="badge badge-gray">معطل</span>'}</td>
+        <td>${fmtDate(user.created_at)}</td>
+        <td>${user.id === state.user.id ? '<span class="muted">حسابك الحالي</span>' : `<div class="toolbar">
+          <button class="btn btn-soft btn-small" data-edit-user="${user.id}">${icons.edit} تعديل</button>
+          <button class="btn btn-soft btn-small" data-toggle-user="${user.id}" data-active="${user.active ? 0 : 1}">${user.active ? 'تعطيل' : 'تفعيل'}</button>
+          <button class="btn btn-danger btn-small" data-delete-user="${user.id}" aria-label="حذف حساب ${esc(user.name)}">${icons.trash}</button>
+        </div>`}</td></tr>`).join('')}</tbody></table></section>`;
+}
+function settingsPage(){return`<div class="section-head"><div><h2>الحساب والأمان</h2><p>جلسة المستخدم والأجهزة الموثوقة والإعدادات الفعلية.</p></div></div><div class="split"><section class="card" style="padding:22px"><h2 class="display" style="font-size:19px">الحساب الحالي</h2><div class="batch-row" style="padding-right:0;padding-left:0"><div class="row-copy"><strong>${esc(state.user.name)}</strong><small><bdi dir="ltr">@${esc(state.user.username)}</bdi> · ${state.user.role==='admin'?'مدير':'مشرف'}</small></div><span class="badge badge-green">جلسة نشطة</span></div><button class="btn btn-danger" id="logoutSettings">تسجيل الخروج من هذا الجهاز</button></section><section class="card" style="padding:22px"><div class="section-head" style="margin-top:0"><div><h2>الدخول السريع</h2><p>باركودات هذا الحساب قابلة للإلغاء.</p></div><button class="btn btn-gold btn-small" id="newDevice">${icons.qr} توليد</button></div><div>${state.devices.filter(d=>!d.revoked).map(d=>`<div class="batch-row" style="padding-right:0;padding-left:0"><div class="row-copy"><strong>${esc(d.label)}</strong><small>آخر استخدام: ${fmtDate(d.last_used_at)}</small></div><button class="btn btn-danger btn-small" data-revoke-device="${d.id}">إلغاء</button></div>`).join('')||empty('لا توجد أجهزة موثوقة')}</div></section></div>`}
+function mediaRecords() {
+  const photos = new Map();
+  for (const batch of state.data.batches || []) {
+    for (const album of batch.albums || []) {
+      for (const photo of album.photos || []) {
+        if (!photos.has(photo.object_key)) photos.set(photo.object_key, photo);
+      }
+    }
+  }
+  return (state.data.media?.objects || []).map(file => ({ ...file, ...photos.get(file.key) }));
+}
+function selectedMedia() {
+  return [...document.querySelectorAll('#allMedia [data-media-select]:checked')].map(input => input.value);
+}
+function bindMediaControls() {
+  const grid = document.getElementById('allMedia');
+  const search = document.getElementById('mediaSearch');
+  const emptyResults = document.createElement('p');
+  emptyResults.className = 'empty';
+  emptyResults.textContent = 'لا توجد ملفات مطابقة في هذه الصفحة.';
+  emptyResults.hidden = true;
+  grid.after(emptyResults);
+  const cards = [...grid.querySelectorAll('[data-media-key]')];
+  const toolbar = document.createElement('div');
+  toolbar.className = 'toolbar media-selection-toolbar';
+  toolbar.innerHTML = `<label class="media-select-all"><input type="checkbox"> تحديد الكل</label>
+    <span class="muted" role="status"></span>
+    <button class="btn btn-soft btn-small" type="button" data-clear-selection>إلغاء التحديد</button>
+    <button class="btn btn-danger btn-small" type="button" data-delete-selection>حذف المحدد</button>`;
+  toolbar.hidden = state.user.role !== 'admin';
+  grid.before(toolbar);
+  const selectAll = toolbar.querySelector('input');
+  const status = toolbar.querySelector('[role="status"]');
+  const clear = toolbar.querySelector('[data-clear-selection]');
+  const remove = toolbar.querySelector('[data-delete-selection]');
+  const visibleChecks = () => [...grid.querySelectorAll('.media-card:not([hidden]) [data-media-select]')];
+  function update() {
+    const count = selectedMedia().length;
+    const total = visibleChecks().length;
+    status.textContent = count ? `${count} صور محددة` : 'لم يتم تحديد صور';
+    selectAll.checked = count > 0 && count === total;
+    selectAll.indeterminate = count > 0 && count < total;
+    selectAll.disabled = !total || remove.hasAttribute('aria-busy');
+    clear.disabled = !count || remove.hasAttribute('aria-busy');
+    remove.disabled = !count || remove.hasAttribute('aria-busy');
+  }
+  search.oninput = () => {
+    const query = search.value.trim().toLowerCase();
+    for (const card of cards) {
+      card.hidden = !card.dataset.mediaKey.toLowerCase().includes(query);
+      const checkbox = card.querySelector('[data-media-select]');
+      if (card.hidden && checkbox) checkbox.checked = false;
+    }
+    emptyResults.hidden = !cards.length || cards.some(card => !card.hidden);
+    update();
+  };
+  selectAll.onchange = () => {
+    for (const checkbox of visibleChecks()) checkbox.checked = selectAll.checked;
+    update();
+  };
+  clear.onclick = () => {
+    for (const checkbox of visibleChecks()) checkbox.checked = false;
+    update();
+  };
+  remove.onclick = async () => {
+    const keys = selectedMedia();
+    if (!keys.length || !confirm(`حذف ${keys.length} صورة؟ لا يمكن التراجع عن هذا الإجراء.`)) return;
+    await runAction(remove, async () => {
+      await sendJSON('/api/admin/media', 'DELETE', { keys });
+      await updateAfterChange('تم حذف الصور المحددة');
+    });
+    if (toolbar.isConnected) update();
+  };
+  grid.addEventListener('change', event => { if (event.target.matches('[data-media-select]')) update(); });
+  document.getElementById('mediaFirst').onclick = event => changeMediaPage(event.currentTarget, '');
+  document.getElementById('mediaNext').onclick = event => changeMediaPage(event.currentTarget, state.data.media.pagination.cursor);
   update();
-};
-document.getElementById('mediaFirst').onclick=()=>changeMediaPage('');
-document.getElementById('mediaNext').onclick=()=>changeMediaPage(state.data.media.pagination.cursor);
-container.querySelectorAll('.media-card').forEach((card,index)=>{const file=files[index];if(!file)return;const select=document.createElement('input');select.type='checkbox';select.hidden=state.user.role!=='admin';select.setAttribute('aria-label','تحديد '+file.key);select.value=file.key;select.dataset.mediaSelect='';select.style.cssText='position:absolute;top:10px;right:10px;width:20px;height:20px;z-index:2';card.style.position='relative';card.prepend(select);const actions=card.querySelector('.media-actions');actions.insertAdjacentHTML('afterbegin',`<button class="btn btn-soft btn-small" data-view-media="${esc(file.key)}">${icons.image} عرض</button><button class="btn btn-soft btn-small" data-edit-media="${esc(file.id||'')}" ${file.id?'':'hidden'}>${icons.edit} تعديل</button><label class="btn btn-soft btn-small" style="cursor:pointer">${icons.upload} استبدال<input type="file" accept="image/jpeg,image/png,image/webp" data-replace-media="${esc(file.key)}" hidden></label>`)});const update=()=>{const count=selectedMedia().length;document.getElementById('selectedMediaCount').textContent=count?`${count} صور محددة`:'لم يتم تحديد صور';document.getElementById('deleteSelectedMedia').disabled=!count};container.addEventListener('change',e=>{if(e.target.matches('[data-media-select]'))update()});document.getElementById('selectAllMedia').onchange=e=>{container.querySelectorAll('.media-card:not([hidden]) [data-media-select]').forEach(input=>input.checked=e.target.checked);update()};document.getElementById('clearMediaSelection').onclick=()=>{container.querySelectorAll('[data-media-select]').forEach(input=>input.checked=false);document.getElementById('selectAllMedia').checked=false;update()};document.getElementById('deleteSelectedMedia').onclick=()=>deleteSelectedMedia();container.querySelectorAll('[data-view-media]').forEach(button=>button.onclick=()=>viewMedia(button.dataset.viewMedia));container.querySelectorAll('[data-edit-media]').forEach(button=>button.onclick=()=>editMedia(button.dataset.editMedia));container.querySelectorAll('[data-replace-media]').forEach(input=>input.onchange=()=>replaceMedia(input.dataset.replaceMedia,input.files[0]))}
+}
 function viewMedia(key){const file=mediaRecords().find(item=>item.key===key);if(!file)return;modal('معاينة الصورة',`<div style="text-align:center"><img src="${esc(file.url||`/media/${file.key}`)}" alt="${esc(file.alt_text||file.key)}" style="max-width:100%;max-height:65vh;object-fit:contain;border-radius:16px"><p class="muted" style="margin-top:12px">${esc(file.caption||file.key)}</p></div>`)}
-function editMedia(id){const batches=state.data.batches||[];const file=batches.flatMap(batch=>batch.albums.flatMap(album=>album.photos||[])).find(photo=>String(photo.id)===String(id));if(!file)return toast('تعذر العثور على بيانات الصورة','error');const albums=batches.flatMap(b=>(b.albums||[]).map(a=>({...a,batch_year:b.year})));const m=modal('تعديل بيانات الصورة',`<form id="entityForm" class="form-grid"><div class="field span-2"><label>الألبوم<span class="hint">يمكن نقل الصورة إلى ألبوم آخر.</span></label><select class="select" name="album_id" required>${albums.map(a=>`<option value="${a.id}" ${a.id===file.album_id?'selected':''}>${esc(a.batch_year)} · ${esc(a.title)}</option>`).join('')}</select></div><fieldset class="field span-2"><legend>الطلبة الظاهرون بالصورة</legend><p class="hint">حدد الأسماء حتى تظهر الصورة عند البحث عنها في الأرشيف.</p><div class="photo-tag-list"></div></fieldset><div class="field span-2"><label>النص البديل<span class="hint">وصف مختصر يساعد الوصول والبحث.</span></label><input class="input" name="alt_text" value="${esc(file.alt_text||'')}"></div><div class="field span-2"><label>الوصف<span class="hint">يظهر عند فتح الصورة.</span></label><textarea class="textarea" name="caption">${esc(file.caption||'')}</textarea></div><div class="field"><label>الترتيب</label><input class="input" name="sort_order" type="number" min="0" value="${esc(file.sort_order||0)}"></div><div class="glass-switch-row form-switch" data-zaki-switch><label class="glass-switch-row" data-switch-fallback><input name="published" type="checkbox" class="glass-switch" role="switch" ${file.published?'checked':''}> <span>منشورة للزوار</span></label><span data-switch-control></span></div><button class="btn btn-primary span-2">حفظ التعديلات</button></form>`);const form = m.querySelector('form');
+function editMedia(id){const batches=state.data.batches||[];const file=batches.flatMap(batch=>batch.albums.flatMap(album=>album.photos||[])).find(photo=>String(photo.id)===String(id));if(!file)return toast('تعذر العثور على بيانات الصورة','error');const albums=batches.flatMap(b=>(b.albums||[]).map(a=>({...a,batch_year:b.year})));const m=modal('تعديل بيانات الصورة',`<form id="entityForm" class="form-grid"><div class="field span-2"><label>الألبوم<span class="hint">يمكن نقل الصورة إلى ألبوم آخر.</span></label><select class="select" name="album_id" required>${albums.map(a=>`<option value="${a.id}" ${a.id===file.album_id?'selected':''}>${esc(a.batch_year)} · ${esc(a.title)}</option>`).join('')}</select></div><fieldset class="field span-2"><legend>الطلبة الظاهرون بالصورة</legend><p class="hint">حدد الأسماء حتى تظهر الصورة عند البحث عنها في الأرشيف.</p><div class="photo-tag-list"></div></fieldset><div class="field span-2"><label>النص البديل<span class="hint">وصف مختصر يساعد الوصول والبحث.</span></label><input class="input" name="alt_text" value="${esc(file.alt_text||'')}"></div><div class="field span-2"><label>الوصف<span class="hint">يظهر عند فتح الصورة.</span></label><textarea class="textarea" name="caption">${esc(file.caption||'')}</textarea></div><div class="field"><label>الترتيب</label><input class="input" name="sort_order" type="number" min="0" value="${esc(file.sort_order||0)}"></div><div class="glass-switch-row form-switch" data-zaki-switch><label class="glass-switch-row" data-admin-fallback><input name="published" type="checkbox" class="glass-switch" role="switch" ${file.published?'checked':''}> <span>منشورة للزوار</span></label><span data-admin-control></span></div>${submitButton('حفظ التعديلات')}</form>`);const form = m.querySelector('form');
   const chosen = new Set(file.student_ids || []);
   const list = form.querySelector('.photo-tag-list');
   function renderStudents() {
@@ -90,24 +287,92 @@ function editMedia(id){const batches=state.data.batches||[];const file=batches.f
     else chosen.delete(id);
   });
   renderStudents();
-  form.onsubmit=async e=>{e.preventDefault();const data=new FormData(form);const d=Object.fromEntries(data);d.student_ids=data.getAll('student_ids').map(Number);d.id=file.id;d.published=e.target.published.checked;try{await api('/api/admin/photos',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});m.close();await refresh();toast('تم تعديل الصورة','success')}catch(error){toast(error.message,'error')}}}
-async function replaceMedia(key,file){if(!file)return;const current=mediaRecords().find(item=>item.key===key);if(!current)return;try{const form=new FormData();form.append('file',file);form.append('key',key);form.append('replace','1');await api('/api/admin/upload',{method:'POST',body:form});await refresh();toast('تم استبدال الصورة','success')}catch(error){toast(error.message,'error')}}
-async function deleteSelectedMedia(){const keys=selectedMedia();if(!keys.length||!confirm(`حذف ${keys.length} صورة؟ لا يمكن التراجع عن هذا الإجراء.`))return;try{await api('/api/admin/media',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({keys})});await refresh();toast('تم حذف الصور المحددة','success')}catch(error){toast(error.message,'error')}}
-function render(){root.innerHTML=layout();bind();if(state.view==='media'){bindUploads();enhanceMediaControls()}}
-function bind(){document.querySelectorAll('[data-tag-photo]').forEach(button=>button.onclick=()=>editMedia(button.dataset.tagPhoto));document.querySelectorAll('[data-delete-batch]').forEach(button=>button.onclick=()=>deleteEntity('/api/admin/batches/'+button.dataset.deleteBatch,{},'الدفعة وكل ألبوماتها وأسماء طلبتها'));document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>{state.view=b.dataset.nav;state.selectedBatch=null;render();document.getElementById('sidebar')?.classList.remove('open')});bindSidebar();document.getElementById('refreshBtn')?.addEventListener('click',refresh);document.getElementById('logoutBtn')?.addEventListener('click',logout);document.querySelectorAll('[data-open-batch]').forEach(b=>b.onclick=()=>{state.selectedBatch=b.dataset.openBatch;state.view='batches';render()});document.querySelectorAll('[data-edit-batch]').forEach(b=>b.onclick=()=>openBatchModal((state.data.batches||[]).find(x=>x.id==b.dataset.editBatch)));document.querySelector('[data-new-batch]')?.addEventListener('click',()=>openBatchModal());document.querySelectorAll('[data-new-album]').forEach(b=>b.onclick=()=>openAlbumModal(b.dataset.newAlbum));document.querySelectorAll('[data-edit-album]').forEach(b=>b.onclick=()=>openAlbumModal(null,(state.data.batches||[]).flatMap(x=>x.albums||[]).find(a=>a.id==b.dataset.editAlbum)));document.querySelectorAll('[data-delete-album]').forEach(b=>b.onclick=()=>deleteEntity('/api/admin/albums',{id:b.dataset.deleteAlbum},'الألبوم'));document.querySelectorAll('[data-new-student]').forEach(b=>b.onclick=()=>openStudentModal(b.dataset.newStudent));document.querySelectorAll('[data-edit-student]').forEach(b=>b.onclick=()=>openStudentModal(null,(state.data.batches||[]).flatMap(x=>x.students||[]).find(s=>s.id==b.dataset.editStudent)));document.querySelectorAll('[data-delete-student]').forEach(b=>b.onclick=()=>deleteEntity('/api/admin/students',{id:b.dataset.deleteStudent},'الاسم'));document.querySelectorAll('[data-delete-media]').forEach(b=>b.onclick=()=>deleteEntity('/api/admin/media',{key:b.dataset.deleteMedia},'الصورة'));document.querySelector('[data-refresh-media]')?.addEventListener('click',refresh);document.querySelectorAll('[data-upload-for]').forEach(b=>b.onclick=()=>{state.view='media';render();const select=document.getElementById('uploadAlbum');if(select){
-  const options=[...select.options].filter(option=>option.dataset.batch===b.dataset.uploadFor);
-  if(options.length)select.value=options[0].value;
-  else toast('أضف ألبومًا إلى هذه الدفعة قبل ربط الصور بها');
-  select.focus();
-}});document.querySelector('[data-new-user]')?.addEventListener('click',()=>openUserModal());document.querySelectorAll('[data-edit-user]').forEach(b=>b.onclick=()=>openUserModal((state.data.users||[]).find(u=>u.id==b.dataset.editUser)));document.querySelectorAll('[data-delete-user]').forEach(b=>b.onclick=()=>deleteEntity('/api/admin/users',{id:b.dataset.deleteUser},'الحساب'));document.querySelectorAll('[data-toggle-user]').forEach(b=>b.onclick=()=>toggleUser(b.dataset.toggleUser,b.dataset.active,b.dataset.role));document.querySelector('#logoutSettings')?.addEventListener('click',logout);document.querySelector('#newDevice')?.addEventListener('click',createDevice);document.querySelectorAll('[data-revoke-device]').forEach(b=>b.onclick=()=>revokeDevice(b.dataset.revokeDevice))}
+  bindEntityForm(m, (data, fields) => sendJSON('/api/admin/photos', 'PATCH', {
+    ...data, id: file.id, student_ids: fields.getAll('student_ids').map(Number)
+  }), 'تم تعديل الصورة');
+}
+async function replaceMedia(input) {
+  const file = input.files[0];
+  input.value = '';
+  if (!file) return;
+  const button = input.previousElementSibling;
+  await runAction(button, async () => {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('key', input.dataset.replaceMedia);
+    form.append('replace', '1');
+    await api('/api/admin/upload', { method: 'POST', body: form });
+    await updateAfterChange('تم استبدال الصورة');
+  });
+}
+function render() {
+  root.innerHTML = layout();
+  bind();
+  if (state.view === 'media') {
+    bindUploads();
+    bindMediaControls();
+  }
+  root.dispatchEvent(new Event('admin:render'));
+}
+function showView(view, batch = null) {
+  state.view = view;
+  state.selectedBatch = batch;
+  render();
+  window.scrollTo(0, 0);
+  root.querySelector(batch ? '#batch-details-title' : '.topbar-title h1')?.focus({ preventScroll: true });
+}
+function bind() {
+  const click = (selector, handler) => root.querySelectorAll(selector).forEach(button => {
+    button.onclick = () => handler(button);
+  });
+  const batches = state.data.batches;
+  const findBatch = id => batches.find(batch => batch.id === Number(id));
+  const findAlbum = id => batches.flatMap(batch => batch.albums || []).find(album => album.id === Number(id));
+  const findStudent = id => batches.flatMap(batch => batch.students || []).find(student => student.id === Number(id));
+  const findUser = id => (state.data.users || []).find(user => user.id === Number(id));
+  bindSidebar();
+  click('[data-nav]', button => showView(button.dataset.nav));
+  click('#refreshBtn, [data-refresh-media]', refresh);
+  click('#logoutBtn, #logoutSettings', logout);
+  click('[data-new-batch]', () => openBatchModal());
+  click('[data-open-batch]', button => showView('batches', Number(button.dataset.openBatch)));
+  click('[data-edit-batch]', button => openBatchModal(findBatch(button.dataset.editBatch)));
+  click('[data-delete-batch]', button => deleteEntity(button, '/api/admin/batches/' + button.dataset.deleteBatch, {}, 'الدفعة وكل ألبوماتها وأسماء طلبتها'));
+  click('[data-new-album]', button => openAlbumModal(button.dataset.newAlbum));
+  click('[data-edit-album]', button => openAlbumModal(null, findAlbum(button.dataset.editAlbum)));
+  click('[data-delete-album]', button => deleteEntity(button, '/api/admin/albums', { id: button.dataset.deleteAlbum }, 'الألبوم'));
+  click('[data-new-student]', button => openStudentModal(button.dataset.newStudent));
+  click('[data-edit-student]', button => openStudentModal(null, findStudent(button.dataset.editStudent)));
+  click('[data-delete-student]', button => deleteEntity(button, '/api/admin/students', { id: button.dataset.deleteStudent }, 'الاسم'));
+  click('[data-tag-photo], [data-edit-media]', button => editMedia(button.dataset.tagPhoto || button.dataset.editMedia));
+  click('[data-view-media]', button => viewMedia(button.dataset.viewMedia));
+  click('[data-delete-media]', button => deleteEntity(button, '/api/admin/media', { key: button.dataset.deleteMedia }, 'الصورة'));
+  click('[data-replace-button]', button => button.nextElementSibling.click());
+  root.querySelectorAll('[data-replace-media]').forEach(input => { input.onchange = () => replaceMedia(input); });
+  click('[data-upload-for]', button => {
+    const album = findBatch(button.dataset.uploadFor)?.albums[0];
+    state.uploadSettings.album = album ? String(album.id) : '';
+    showView('media');
+    if (!album) toast('أضف ألبومًا إلى هذه الدفعة قبل ربط الصور بها');
+    document.getElementById('uploadAlbum').focus();
+  });
+  click('[data-new-user]', () => openUserModal());
+  click('[data-edit-user]', button => openUserModal(findUser(button.dataset.editUser)));
+  click('[data-delete-user]', button => deleteEntity(button, '/api/admin/users', { id: button.dataset.deleteUser }, 'الحساب'));
+  click('[data-toggle-user]', toggleUser);
+  click('#newDevice', createDevice);
+  click('[data-revoke-device]', revokeDevice);
+}
 function bindSidebar() {
   const sidebar = document.getElementById('sidebar');
   const button = document.getElementById('menuBtn');
   const scrim = document.getElementById('sidebarScrim');
   if (!sidebar || !button || !scrim) return;
+  const content = root.querySelector('.content');
 
   function setOpen(open) {
     sidebar.classList.toggle('open', open);
+    content.inert = open;
     button.setAttribute('aria-expanded', String(open));
     button.setAttribute('aria-label', open ? 'إغلاق قائمة الإدارة' : 'فتح قائمة الإدارة');
   }
@@ -123,6 +388,14 @@ function bindSidebar() {
     setOpen(false);
     button.focus();
   });
+  sidebar.addEventListener('keydown', event => {
+    if (event.key !== 'Tab' || !sidebar.classList.contains('open')) return;
+    const entries = [...sidebar.querySelectorAll('button')];
+    const boundary = event.shiftKey ? entries[0] : entries.at(-1);
+    if (document.activeElement !== boundary) return;
+    event.preventDefault();
+    (event.shiftKey ? entries.at(-1) : entries[0]).focus();
+  });
 }
 document.addEventListener('keydown', event => {
   if (event.key !== 'Escape' || document.querySelector('dialog[open]')) return;
@@ -132,102 +405,279 @@ document.addEventListener('keydown', event => {
   button.click();
   button.focus();
 });
+matchMedia('(min-width: 900px)').addEventListener('change', event => {
+  if (event.matches) root.querySelector('#menuBtn[aria-expanded="true"]')?.click();
+});
 
-async function changeMediaPage(cursor){
-  try{
-    state.data.media=await api('/api/admin/media?limit=50&cursor='+encodeURIComponent(cursor));
-    state.mediaCursor=cursor;
-    state.data.counts.media=state.data.media.objects.length;
-    state.data.counts.storage_bytes=state.data.media.objects.reduce((sum,file)=>sum+file.size,0);
-    render();
-  }catch(error){toast(error.message,'error')}
+async function runAction(button, action) {
+  if (button.disabled) return;
+  const session = state;
+  button.disabled = true;
+  button.setAttribute('aria-busy', 'true');
+  try { await action(); }
+  catch (error) { if (state === session) toast(error.message, 'error'); }
+  finally {
+    button.removeAttribute('aria-busy');
+    button.disabled = false;
+  }
 }
-async function refresh(){try{state.data=await api('/api/admin/overview');state.mediaCursor='';state.devices=await api('/api/auth/device');render();toast('تم تحديث البيانات','success')}catch(e){toast(e.message,'error')}}
-async function logout(){
-  try{
-    await api('/api/auth/logout',{method:'POST'});
-    state={user:null,view:'overview',data:null,selectedBatch:null,uploadQueue:[],devices:[]};
-    login();
-  }catch(error){toast(error.message,'error')}
-}
-async function deleteEntity(url,body,label){if(!confirm(`هل تريد حذف ${label}؟`))return;try{await api(url,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});await refresh();toast(`تم حذف ${label}`,'success')}catch(e){toast(e.message,'error')}}
-function modal(title,body){
-  const root=document.getElementById('modal-root');
-  root.innerHTML=`<dialog class="modal" aria-labelledby="modal-title"><div class="modal-head glass-surface"><h2 id="modal-title">${esc(title)}</h2><button class="glass-icon" id="closeModal" type="button" aria-label="إغلاق">${icons.close}</button></div>${body}</dialog>`;
-  const dialog=root.querySelector('dialog');
-  dialog.querySelectorAll('.field').forEach((field,index)=>{
-    const label=field.querySelector(':scope > label');
-    const control=field.querySelector(':scope > input,:scope > select,:scope > textarea');
-    if(label&&control){control.id='entity-field-'+index;label.htmlFor=control.id}
+async function changeMediaPage(button, cursor) {
+  const session = state;
+  if (session.loadingMedia) return;
+  await runAction(button, async () => {
+    session.loadingMedia = true;
+    try {
+      const media = await api('/api/admin/media?limit=50&cursor=' + encodeURIComponent(cursor));
+      if (state !== session || state.view !== 'media') return;
+      state.mediaCursor = cursor;
+      state.data.media = media;
+      state.data.counts.media = media.objects.length;
+      state.data.counts.storage_bytes = media.objects.reduce((sum, file) => sum + file.size, 0);
+      render();
+      document.getElementById('mediaSearch').focus();
+    } finally { session.loadingMedia = false; }
   });
-  dialog.querySelector('#closeModal').onclick=()=>dialog.close();
-  dialog.addEventListener('close',()=>dialog.remove(),{once:true});
+}
+function refresh(button) {
+  return runAction(button, async () => {
+    if (await loadAdminData()) toast('تم تحديث البيانات', 'success');
+  });
+}
+async function updateAfterChange(message) {
+  const session = state;
+  try { if (await loadAdminData()) toast(message, 'success'); }
+  catch (error) {
+    if (state === session) toast(message + '، وتعذّر تحديث العرض. اضغط تحديث.', 'error');
+  }
+}
+function logout(button) {
+  return runAction(button, async () => {
+    await api('/api/auth/logout', { method: 'POST' });
+    endSession();
+    document.getElementById('loginUsername').focus();
+  });
+}
+function deleteEntity(button, url, body, label) {
+  if (!confirm(`هل تريد حذف ${label}؟`)) return;
+  return runAction(button, async () => {
+    await sendJSON(url, 'DELETE', body);
+    await updateAfterChange(`تم حذف ${label}`);
+  });
+}
+function modal(title, body) {
+  const host = document.getElementById('modal-root');
+  host.innerHTML = `<dialog class="modal" aria-labelledby="modal-title">
+    <div class="modal-head glass-surface"><h2 id="modal-title">${esc(title)}</h2>
+      <button class="glass-icon" id="closeModal" type="button" aria-label="إغلاق">${icons.close}</button>
+    </div>
+    <div class="modal-scroll">${body}</div>
+  </dialog>`;
+  const dialog = host.querySelector('dialog');
+  dialog.querySelectorAll('.field').forEach((field, index) => {
+    const label = field.querySelector(':scope > label');
+    const control = field.querySelector(':scope > input,:scope > select,:scope > textarea');
+    if (label && control) {
+      control.id ||= 'entity-field-' + index;
+      label.htmlFor = control.id;
+    }
+  });
+  const close = dialog.querySelector('#closeModal');
+  close.onclick = () => dialog.close();
+  dialog.addEventListener('cancel', event => {
+    if (close.disabled) event.preventDefault();
+  });
+  dialog.addEventListener('close', () => dialog.remove(), { once: true });
   dialog.showModal();
   return dialog;
 }
-function openBatchModal(b){b=b||{};const coverKeys=[...new Set([b.cover_key,...(b.albums||[]).flatMap(a=>a.photos.map(p=>p.object_key)),...(state.data.media?.objects||[]).map(p=>p.key)].filter(Boolean))];const m=modal(b.id?'تعديل الدفعة':'إضافة دفعة',`<form id="entityForm" class="form-grid"><div class="field"><label>السنة<span class="hint">السنة الدراسية للدفعة، مثل 2024.</span></label><input class="input" name="year" type="number" min="2000" max="2100" required placeholder="مثال: 2024" value="${esc(b.year||'')}"></div><div class="field"><label>العنوان<span class="hint">اسم قصير يظهر للزوار.</span></label><input class="input" name="title" maxlength="160" required placeholder="مثال: دفعة الأبطال" value="${esc(b.title||'')}"></div><div class="field"><label>الحالة<span class="hint">اختر حالية أو متخرجة.</span></label><select class="select" name="status"><option value="current" ${b.status==='current'?'selected':''}>حالية</option><option value="graduated" ${b.status==='graduated'?'selected':''}>متخرجة</option></select></div><div class="field"><label>القسم<span class="hint">اسم القسم أو التخصص.</span></label><input class="input" name="department" placeholder="علوم الحاسوب وتكنولوجيا المعلومات" value="${esc(b.department||'علوم الحاسوب وتكنولوجيا المعلومات')}"></div><div class="field"><label>سنة القبول<span class="hint">اختياري، اتركه فارغًا إن لم يتوفر.</span></label><input class="input" name="admission_year" type="number" min="1900" max="2200" placeholder="مثال: 2024" value="${esc(b.admission_year||'')}"></div><div class="field"><label>سنة التخرج<span class="hint">اختياري للدفعات الحالية.</span></label><input class="input" name="graduation_year" type="number" min="1900" max="2200" placeholder="مثال: 2028" value="${esc(b.graduation_year||'')}"></div><div class="field span-2"><label>الاقتباس<span class="hint">جملة قصيرة تظهر أعلى صفحة الدفعة.</span></label><input class="input" name="quote" placeholder="مثال: نترك للغد أجمل الأثر." value="${esc(b.quote||'')}"></div><div class="field span-2"><label>الوصف<span class="hint">نبذة تعريفية عن الدفعة، ويمكن تركها فارغة.</span></label><textarea class="textarea" name="description" placeholder="اكتب نبذة عن الدفعة...">${esc(b.description||'')}</textarea></div><div class="field span-2"><label>غلاف الدفعة<span class="hint">اختيار الغلاف يجعله ظاهرًا للزوار عند نشر الدفعة.</span></label><select name="cover_key" class="select"><option value="">بدون غلاف</option>${coverKeys.map(key=>`<option value="${esc(key)}" ${b.cover_key===key?'selected':''}>${esc(key)}</option>`).join('')}</select></div><div class="glass-switch-row span-2" data-zaki-switch><label class="glass-switch-row" data-switch-fallback><input name="published" type="checkbox" class="glass-switch" role="switch" ${b.published?'checked':''}> <span>نشر الدفعة للزوار</span></label><span data-switch-control></span></div><button class="btn btn-primary span-2">حفظ البيانات</button></form>`);m.querySelector('form').onsubmit=async e=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));d.published=e.target.published.checked;try{await api(b.id?`/api/admin/batches/${b.id}`:'/api/admin/batches',{method:b.id?'PATCH':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});m.close();await refresh();toast('تم حفظ الدفعة','success')}catch(err){toast(err.message,'error')}}}
-function openAlbumModal(batchId,a){const m=modal(a?'تعديل الألبوم':'إضافة ألبوم',`<form id="entityForm" class="form-grid">${a?'':'<div class="field span-2"><label>الدفعة<span class="hint">اختر الدفعة التي ينتمي إليها الألبوم.</span></label><select class="select" name="batch_id" required>'+ (state.data.batches||[]).map(b=>`<option value="${b.id}" ${b.id==batchId?'selected':''}>${esc(b.year)} · ${esc(b.title)}</option>`).join('')+'</select></div>'}<div class="field"><label>العنوان<span class="hint">اسم الألبوم الذي سيظهر للزوار.</span></label><input class="input" name="title" maxlength="160" required placeholder="مثال: الفعاليات" value="${esc(a?.title||'')}"></div><div class="field"><label>المعرف<span class="hint">استخدم أحرفًا إنجليزية أو أرقامًا وشرطة.</span></label><input class="input" name="slug" ${a?'disabled':''} required pattern="[a-zA-Z0-9_-]+" placeholder="مثال: activities" value="${esc(a?.slug||'')}"></div><div class="field span-2"><label>الوصف المختصر<span class="hint">وصف صغير يظهر تحت اسم الألبوم.</span></label><input class="input" name="subtitle" placeholder="مثال: أيام صنعت الذكرى" value="${esc(a?.subtitle||'')}"></div><div class="field"><label>الترتيب<span class="hint">رقم أصغر يعني ظهورًا أبكر.</span></label><input class="input" name="sort_order" type="number" placeholder="0" value="${esc(a?.sort_order||0)}"></div><div class="glass-switch-row form-switch" data-zaki-switch><label class="glass-switch-row" data-switch-fallback><input name="published" type="checkbox" class="glass-switch" role="switch" ${a?.published?'checked':''}> <span>منشور</span></label><span data-switch-control></span></div><button class="btn btn-primary span-2">حفظ الألبوم</button></form>`);m.querySelector('form').onsubmit=async e=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));d.published=e.target.published.checked;if(a)d.id=a.id;try{await api('/api/admin/albums',{method:a?'PATCH':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});m.close();await refresh();toast('تم حفظ الألبوم','success')}catch(err){toast(err.message,'error')}}}
-function openStudentModal(batchId,s){const m=modal(s?'تعديل اسم':'إضافة اسم',`<form id="entityForm" class="form-grid">${s?'':'<div class="field span-2"><label>الدفعة<span class="hint">اختر الدفعة الخاصة بالطالب.</span></label><select class="select" name="batch_id" required>'+ (state.data.batches||[]).map(b=>`<option value="${b.id}" ${b.id==batchId?'selected':''}>${esc(b.year)} · ${esc(b.title)}</option>`).join('')+'</select></div>'}<div class="field span-2"><label>الاسم الكامل<span class="hint">اكتب الاسم كما تريد عرضه للزوار.</span></label><input class="input" name="full_name" required placeholder="مثال: أحمد محمد علي" value="${esc(s?.full_name||'')}"></div><div class="field"><label>الترتيب<span class="hint">رقم أصغر يظهر أولًا.</span></label><input class="input" name="sort_order" type="number" placeholder="0" value="${esc(s?.sort_order||0)}"></div><div class="glass-switch-row form-switch" data-zaki-switch><label class="glass-switch-row" data-switch-fallback><input name="published" type="checkbox" class="glass-switch" role="switch" ${s?.published?'checked':''}> <span>منشور</span></label><span data-switch-control></span></div><button class="btn btn-primary span-2">حفظ الاسم</button></form>`);m.querySelector('form').onsubmit=async e=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));d.published=e.target.published.checked;if(s)d.id=s.id;try{await api('/api/admin/students',{method:s?'PATCH':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});m.close();await refresh();toast('تم حفظ الاسم','success')}catch(err){toast(err.message,'error')}}}
-function openUserModal(u){const editing=Boolean(u);const m=modal(editing?'تعديل المستخدم':'إضافة مستخدم جديد',`<form id="entityForm" class="form-grid"><div class="field span-2"><label>الاسم<span class="hint">الاسم الظاهر داخل لوحة الإدارة.</span></label><input class="input" name="name" required placeholder="مثال: بلال زامل أحمد" value="${esc(u?.name||'')}"></div><div class="field"><label>اسم المستخدم<span class="hint">أحرف إنجليزية أو أرقام أو _ أو -، من 3 إلى 32 رمزًا.</span></label><input class="input" name="username" pattern="[a-zA-Z0-9_-]{3,32}" required placeholder="مثال: supervisor1" value="${esc(u?.username||'')}" ${editing?'disabled':''}></div><div class="field"><label>الدور<span class="hint">المدير يملك صلاحيات الإدارة الكاملة.</span></label><select class="select" name="role"><option value="editor" ${u?.role==='editor'?'selected':''}>مشرف</option><option value="admin" ${u?.role==='admin'?'selected':''}>مدير</option></select></div><div class="field span-2"><label>كلمة المرور ${editing?'الجديدة (اختياري)':''}<span class="hint">12 رمزًا على الأقل، واستخدم كلمة قوية.</span></label><input class="input" name="password" type="password" minlength="12" ${editing?'':'required'} placeholder="أدخل كلمة المرور"><small class="muted">12 رمزًا على الأقل</small></div><button class="btn btn-primary span-2">${editing?'حفظ التعديلات':'إنشاء الحساب'}</button></form>`);m.querySelector('form').onsubmit=async e=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));if(editing)d.id=u.id;try{await api(editing?'/api/admin/users':'/api/admin/users',{method:editing?'PATCH':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});m.close();await refresh();toast(editing?'تم تعديل الحساب':'تم إنشاء الحساب','success')}catch(err){toast(err.message,'error')}}}
-async function toggleUser(id,active,role){try{await api('/api/admin/users',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,active:Boolean(Number(active)),role})});await refresh();toast('تم تحديث حالة الحساب','success')}catch(e){toast(e.message,'error')}}
-async function createDevice(){try{const d=await api('/api/auth/device',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({label:'جهاز موثوق'})});const m=modal('باركود الدخول السريع',`<div style="text-align:center"><p class="muted">احتفظ بهذا الرمز في جهازك. لا تشاركه مع الآخرين.</p><canvas id="qrCanvas"></canvas><p class="muted" style="font-size:12px">صالح لمدة 90 يومًا وقابل للإلغاء.</p></div>`);if(window.QRCode)QRCode.toCanvas(document.getElementById('qrCanvas'),location.origin+d.login_url,{width:250,margin:2});else document.getElementById('qrCanvas').insertAdjacentHTML('afterend','<p>تعذر تحميل مولد الباركود</p>');state.devices=await api('/api/auth/device')}catch(e){toast(e.message,'error')}}
-async function revokeDevice(id){try{await api('/api/auth/device',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});state.devices=await api('/api/auth/device');render();toast('تم إلغاء الجهاز','success')}catch(e){toast(e.message,'error')}}
-function bindUploads(){
-  const input=document.getElementById('fileInput');
-  const drop=document.getElementById('dropzone');
-  const start=document.getElementById('startUploads');
-  const clear=document.getElementById('clearUploads');
-  const list=document.getElementById('uploadList');
-  if(!input)return;
-  const pending=()=>state.uploadQueue.filter(item=>item.state==='ready'||item.state==='failed');
-  function draw(){
-    list.innerHTML=state.uploadQueue.map(item=>`<div class="upload-item"><div><div class="file-name">${esc(item.file.name)}</div><div class="progress"><span style="width:${item.progress}%"></span></div></div><span class="status">${esc(item.message)}</span></div>`).join('');
-    start.disabled=Boolean(state.uploading)||!pending().length;
-    clear.disabled=Boolean(state.uploading)||!state.uploadQueue.length;
-    document.getElementById('chooseFiles').disabled=Boolean(state.uploading);
-  }
-  function add(files){
-    if(state.uploading)return;
-    const accepted=[...files].filter(file=>/^image\/(jpeg|png|webp)$/.test(file.type)&&file.size>0&&file.size<=20*1024*1024)
-      .slice(0,50-state.uploadQueue.length);
-    if(files.length>accepted.length)toast('تم تجاوز حد القائمة أو تجاهل ملفات غير مدعومة أو أكبر من 20 ميغابايت','error');
-    state.uploadQueue.push(...accepted.map(file=>({file,progress:0,state:'ready',message:'بانتظار الرفع'})));
-    draw();
-  }
-  document.getElementById('chooseFiles').onclick=()=>input.click();
-  input.onchange=()=>{add(input.files);input.value=''};
-  ['dragenter','dragover'].forEach(type=>drop.addEventListener(type,event=>{event.preventDefault();drop.classList.add('drag')}));
-  ['dragleave','drop'].forEach(type=>drop.addEventListener(type,event=>{event.preventDefault();drop.classList.remove('drag')}));
-  drop.addEventListener('drop',event=>add(event.dataTransfer.files));
-  clear.onclick=()=>{state.uploadQueue=[];draw()};
-  start.onclick=async()=>{
-    const jobs=pending();
-    const settings={
-      album:document.getElementById('uploadAlbum').value,
-      published:document.getElementById('uploadPublished').checked,
-      prefix:document.getElementById('uploadPrefix').value.trim().replace(/^\/+|\/+$/g,'')
-    };
-    if(settings.prefix&&!/^[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)*$/.test(settings.prefix)){
-      toast('اكتب مسارًا بأحرف إنجليزية وأرقام أو شرطات فقط','error');return;
+function bindEntityForm(dialog, save, message) {
+  const form = dialog.querySelector('form');
+  const close = dialog.querySelector('#closeModal');
+  const feedback = document.createElement('p');
+  feedback.className = 'form-feedback span-2';
+  feedback.setAttribute('role', 'alert');
+  feedback.hidden = true;
+  form.insertBefore(feedback, form.querySelector('.admin-submit'));
+  form.onsubmit = async event => {
+    event.preventDefault();
+    if (form.hasAttribute('aria-busy')) return;
+    feedback.hidden = true;
+    const fields = new FormData(form);
+    const data = Object.fromEntries(fields);
+    if (form.elements.published) data.published = form.elements.published.checked;
+    setFormBusy(form, true);
+    close.disabled = true;
+    const session = state;
+    try {
+      await save(data, fields);
+      if (state !== session) return;
+      dialog.close();
+      await updateAfterChange(message);
+    } catch (error) {
+      if (!dialog.open) return;
+      feedback.textContent = error.message;
+      feedback.hidden = false;
+      feedback.scrollIntoView({ block: 'nearest' });
+    } finally {
+      setFormBusy(form, false);
+      close.disabled = false;
     }
-    if(settings.published&&!settings.album){toast('اختر ألبومًا قبل نشر الصور','error');return}
-    state.uploading=true;
+  };
+}
+function openBatchModal(b = {}) {
+  const m = modal(b.id?'تعديل الدفعة':'إضافة دفعة',`<form id="entityForm" class="form-grid"><div class="field"><label>السنة<span class="hint">السنة الدراسية للدفعة، مثل 2024.</span></label><input class="input" name="year" type="number" min="2000" max="2100" required placeholder="مثال: 2024" value="${esc(b.year||'')}"></div><div class="field"><label>العنوان<span class="hint">اسم قصير يظهر للزوار.</span></label><input class="input" name="title" maxlength="160" required placeholder="مثال: دفعة الأبطال" value="${esc(b.title||'')}"></div><div class="field"><label>الحالة<span class="hint">اختر حالية أو متخرجة.</span></label><select class="select" name="status"><option value="current" ${b.status==='current'?'selected':''}>حالية</option><option value="graduated" ${b.status==='graduated'?'selected':''}>متخرجة</option></select></div><div class="field"><label>القسم<span class="hint">اسم القسم أو التخصص.</span></label><input class="input" name="department" placeholder="علوم الحاسوب وتكنولوجيا المعلومات" value="${esc(b.department||'علوم الحاسوب وتكنولوجيا المعلومات')}"></div><div class="field"><label>سنة القبول<span class="hint">اختياري، اتركه فارغًا إن لم يتوفر.</span></label><input class="input" name="admission_year" type="number" min="1900" max="2200" placeholder="مثال: 2024" value="${esc(b.admission_year||'')}"></div><div class="field"><label>سنة التخرج<span class="hint">اختياري للدفعات الحالية.</span></label><input class="input" name="graduation_year" type="number" min="1900" max="2200" placeholder="مثال: 2028" value="${esc(b.graduation_year||'')}"></div><div class="field span-2"><label>الاقتباس<span class="hint">جملة قصيرة تظهر أعلى صفحة الدفعة.</span></label><input class="input" name="quote" placeholder="مثال: نترك للغد أجمل الأثر." value="${esc(b.quote||'')}"></div><div class="field span-2"><label>الوصف<span class="hint">نبذة تعريفية عن الدفعة، ويمكن تركها فارغة.</span></label><textarea class="textarea" name="description" placeholder="اكتب نبذة عن الدفعة...">${esc(b.description||'')}</textarea></div><section class="cover-picker span-2" data-cover-picker aria-labelledby="cover-heading">
+    <div><h3 id="cover-heading">غلاف الدفعة</h3><span class="hint" id="cover-hint">يظهر الغلاف للزوار عند نشر الدفعة.</span></div>
+    <input type="hidden" name="cover_key" value="${esc(b.cover_key || '')}">
+    <div class="cover-current" data-cover-preview aria-live="polite"></div>
+    <div class="toolbar"><button class="btn btn-soft" type="button" data-cover-toggle aria-expanded="false" aria-controls="cover-panel" aria-describedby="cover-hint">اختيار صورة الغلاف</button>
+      <button class="btn btn-soft btn-small" type="button" data-cover-clear hidden>إزالة الغلاف</button></div>
+    <div id="cover-panel" class="cover-panel" data-cover-panel hidden>
+      <div class="cover-tools">
+        <div class="field"><label for="cover-search">البحث في الصور المعروضة</label>
+          <input id="cover-search" class="input" type="search" placeholder="ابحث باسم الصورة" autocomplete="off"></div>
+        <button class="btn btn-soft btn-small" type="button" data-cover-more>عرض صور أخرى</button>
+      </div>
+      <p role="status"></p>
+      <div class="cover-grid" data-cover-grid></div>
+    </div>
+  </section><div class="glass-switch-row span-2" data-zaki-switch><label class="glass-switch-row" data-admin-fallback><input name="published" type="checkbox" class="glass-switch" role="switch" ${b.published?'checked':''}> <span>نشر الدفعة للزوار</span></label><span data-admin-control></span></div>${submitButton('حفظ البيانات')}</form>`);
+  window.adminCoverPicker.bind(m.querySelector('form'), b, { api, esc });
+  bindEntityForm(m, data => sendJSON(b.id ? '/api/admin/batches/' + b.id : '/api/admin/batches', b.id ? 'PATCH' : 'POST', data), 'تم حفظ الدفعة');
+}
+function openAlbumModal(batchId,a){const m=modal(a?'تعديل الألبوم':'إضافة ألبوم',`<form id="entityForm" class="form-grid">${a?'':'<div class="field span-2"><label>الدفعة<span class="hint">اختر الدفعة التي ينتمي إليها الألبوم.</span></label><select class="select" name="batch_id" required>'+ (state.data.batches||[]).map(b=>`<option value="${b.id}" ${b.id==batchId?'selected':''}>${esc(b.year)} · ${esc(b.title)}</option>`).join('')+'</select></div>'}<div class="field"><label>العنوان<span class="hint">اسم الألبوم الذي سيظهر للزوار.</span></label><input class="input" name="title" maxlength="160" required placeholder="مثال: الفعاليات" value="${esc(a?.title||'')}"></div><div class="field"><label>المعرف<span class="hint">استخدم أحرفًا إنجليزية أو أرقامًا وشرطة.</span></label><input class="input" name="slug" ${a?'disabled':''} required pattern="[a-zA-Z0-9_\\-]+" placeholder="مثال: activities" value="${esc(a?.slug||'')}"></div><div class="field span-2"><label>الوصف المختصر<span class="hint">وصف صغير يظهر تحت اسم الألبوم.</span></label><input class="input" name="subtitle" placeholder="مثال: أيام صنعت الذكرى" value="${esc(a?.subtitle||'')}"></div><div class="field"><label>الترتيب<span class="hint">رقم أصغر يعني ظهورًا أبكر.</span></label><input class="input" name="sort_order" type="number" placeholder="0" value="${esc(a?.sort_order||0)}"></div><div class="glass-switch-row form-switch" data-zaki-switch><label class="glass-switch-row" data-admin-fallback><input name="published" type="checkbox" class="glass-switch" role="switch" ${a?.published?'checked':''}> <span>منشور</span></label><span data-admin-control></span></div>${submitButton('حفظ الألبوم')}</form>`);
+  bindEntityForm(m, data => sendJSON('/api/admin/albums', a ? 'PATCH' : 'POST', a ? { ...data, id: a.id } : data), 'تم حفظ الألبوم');
+}
+function openStudentModal(batchId,s){const m=modal(s?'تعديل اسم':'إضافة اسم',`<form id="entityForm" class="form-grid">${s?'':'<div class="field span-2"><label>الدفعة<span class="hint">اختر الدفعة الخاصة بالطالب.</span></label><select class="select" name="batch_id" required>'+ (state.data.batches||[]).map(b=>`<option value="${b.id}" ${b.id==batchId?'selected':''}>${esc(b.year)} · ${esc(b.title)}</option>`).join('')+'</select></div>'}<div class="field span-2"><label>الاسم الكامل<span class="hint">اكتب الاسم كما تريد عرضه للزوار.</span></label><input class="input" name="full_name" required placeholder="مثال: أحمد محمد علي" value="${esc(s?.full_name||'')}"></div><div class="field"><label>الترتيب<span class="hint">رقم أصغر يظهر أولًا.</span></label><input class="input" name="sort_order" type="number" placeholder="0" value="${esc(s?.sort_order||0)}"></div><div class="glass-switch-row form-switch" data-zaki-switch><label class="glass-switch-row" data-admin-fallback><input name="published" type="checkbox" class="glass-switch" role="switch" ${s?.published?'checked':''}> <span>منشور</span></label><span data-admin-control></span></div>${submitButton('حفظ الاسم')}</form>`);
+  bindEntityForm(m, data => sendJSON('/api/admin/students', s ? 'PATCH' : 'POST', s ? { ...data, id: s.id } : data), 'تم حفظ الاسم');
+}
+function openUserModal(u){const editing=Boolean(u);const m=modal(editing?'تعديل المستخدم':'إضافة مستخدم جديد',`<form id="entityForm" class="form-grid"><div class="field span-2"><label>الاسم<span class="hint">الاسم الظاهر داخل لوحة الإدارة.</span></label><input class="input" name="name" required value="${esc(u?.name||'')}"></div><div class="field"><label>اسم المستخدم<span class="hint">أحرف إنجليزية أو أرقام أو _ أو -، من 3 إلى 32 رمزًا.</span></label><input class="input" name="username" pattern="[a-zA-Z0-9_\\-]{3,32}" required placeholder="مثال: supervisor1" value="${esc(u?.username||'')}" ${editing?'disabled':''}></div><div class="field"><label>الدور<span class="hint">المدير يملك صلاحيات الإدارة الكاملة.</span></label><select class="select" name="role"><option value="editor" ${u?.role==='editor'?'selected':''}>مشرف</option><option value="admin" ${u?.role==='admin'?'selected':''}>مدير</option></select></div><div class="field span-2"><label>كلمة المرور ${editing?'الجديدة (اختياري)':''}<span class="hint">12 رمزًا على الأقل، واستخدم كلمة قوية.</span></label><input class="input" name="password" type="password" autocomplete="new-password" minlength="12" ${editing?'':'required'} placeholder="أدخل كلمة المرور"><small class="muted">12 رمزًا على الأقل</small></div>${submitButton(editing?'حفظ التعديلات':'إنشاء الحساب')}</form>`);
+  bindEntityForm(m, data => sendJSON('/api/admin/users', editing ? 'PATCH' : 'POST', editing ? { ...data, id: u.id } : data), editing ? 'تم تعديل الحساب' : 'تم إنشاء الحساب');
+}
+function toggleUser(button) {
+  return runAction(button, async () => {
+    await sendJSON('/api/admin/users', 'PATCH', { id: button.dataset.toggleUser, active: button.dataset.active === '1' });
+    await updateAfterChange('تم تحديث حالة الحساب');
+  });
+}
+function createDevice(button) {
+  return runAction(button, async () => {
+    if (!window.QRCode) throw Error('تعذّر تحميل مولد الباركود');
+    const session = state;
+    const device = await sendJSON('/api/auth/device', 'POST', { label: 'جهاز موثوق' });
+    if (state !== session) return;
+    state.devices = await api('/api/auth/device');
+    if (state !== session) return;
+    render();
+    document.getElementById('newDevice')?.focus({ preventScroll: true });
+    const dialog = modal('باركود الدخول السريع', `<div class="device-qr">
+      <p class="muted">احتفظ بهذا الرمز في جهازك. لا تشاركه مع الآخرين.</p>
+      <canvas id="qrCanvas" aria-label="باركود الدخول السريع"></canvas>
+      <p class="hint">صالح لمدة 90 يومًا وقابل للإلغاء.</p>
+    </div>`);
+    try {
+      await window.QRCode.toCanvas(dialog.querySelector('canvas'), location.origin + device.login_url, { width: 250, margin: 2 });
+    } catch (error) {
+      dialog.close();
+      throw Error('تعذّر عرض الباركود. يمكنك إلغاء الجهاز من القائمة.');
+    }
+  });
+}
+function revokeDevice(button) {
+  if (!confirm('هل تريد إلغاء الدخول السريع لهذا الجهاز؟')) return;
+  return runAction(button, async () => {
+    await sendJSON('/api/auth/device', 'DELETE', { id: button.dataset.revokeDevice });
+    await updateAfterChange('تم إلغاء الجهاز');
+  });
+}
+function drawUploads(session) {
+  if (state !== session || state.view !== 'media') return;
+  const list = document.getElementById('uploadList');
+  list.innerHTML = session.uploadQueue.map(item => `<div class="upload-item">
+    <div><div class="file-name" title="${esc(item.file.name)}"><bdi>${esc(item.file.name)}</bdi></div>
+      <div class="progress" role="progressbar" aria-label="رفع ${esc(item.file.name)}" aria-valuenow="${item.progress}"><span style="width:${item.progress}%"></span></div></div>
+    <span class="status">${esc(item.message)}</span>
+  </div>`).join('');
+  document.getElementById('startUploads').disabled = Boolean(session.uploading) || !session.uploadQueue.some(item => item.state === 'ready' || item.state === 'failed');
+  document.getElementById('clearUploads').disabled = Boolean(session.uploading) || !session.uploadQueue.length;
+  document.getElementById('chooseFiles').disabled = Boolean(session.uploading);
+}
+function bindUploads() {
+  const session = state;
+  const album = document.getElementById('uploadAlbum');
+  const prefix = document.getElementById('uploadPrefix');
+  const published = document.getElementById('uploadPublished');
+  const input = document.getElementById('fileInput');
+  const drop = document.getElementById('dropzone');
+  const draw = () => drawUploads(session);
+  album.value = session.uploadSettings.album;
+  if (album.selectedIndex === -1) album.value = '';
+  prefix.value = session.uploadSettings.prefix;
+  published.checked = session.uploadSettings.published;
+  album.onchange = () => { session.uploadSettings.album = album.value; };
+  prefix.oninput = () => { session.uploadSettings.prefix = prefix.value; };
+  published.onchange = () => { session.uploadSettings.published = published.checked; };
+
+  function add(files) {
+    if (session.uploading) return;
+    const accepted = [...files].filter(file => /^image\/(jpeg|png|webp)$/.test(file.type) && file.size > 0 && file.size <= 20 * 1024 * 1024)
+      .slice(0, 50 - session.uploadQueue.length);
+    if (files.length > accepted.length) toast('تم تجاوز حد القائمة أو تجاهل ملفات غير مدعومة أو أكبر من 20 ميغابايت', 'error');
+    session.uploadQueue.push(...accepted.map(file => ({ file, progress: 0, state: 'ready', message: 'بانتظار الرفع' })));
     draw();
-    let cursor=0;
-    async function worker(){
-      while(cursor<jobs.length){
-        const item=jobs[cursor++];
-        item.state='uploading';item.message='جارٍ الرفع';item.progress=0;draw();
-        try{await uploadOne(item,settings,draw);item.state='done';item.message='تم الرفع';item.progress=100}
-        catch(error){item.state='failed';item.message=error.message}
+  }
+  document.getElementById('chooseFiles').onclick = () => input.click();
+  input.onchange = () => { add(input.files); input.value = ''; };
+  for (const type of ['dragenter', 'dragover']) drop.addEventListener(type, event => {
+    event.preventDefault();
+    drop.classList.add('drag');
+  });
+  for (const type of ['dragleave', 'drop']) drop.addEventListener(type, event => {
+    event.preventDefault();
+    drop.classList.remove('drag');
+  });
+  drop.addEventListener('drop', event => add(event.dataTransfer.files));
+  document.getElementById('clearUploads').onclick = () => { session.uploadQueue = []; draw(); };
+  document.getElementById('startUploads').onclick = async () => {
+    if (session.uploading) return;
+    const jobs = session.uploadQueue.filter(item => item.state === 'ready' || item.state === 'failed');
+    if (!jobs.length) return;
+    const settings = { album: album.value, published: published.checked, prefix: prefix.value.trim().replace(/^\/+|\/+$/g, '') };
+    if (settings.prefix && !/^[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)*$/.test(settings.prefix)) {
+      toast('اكتب مسارًا بأحرف إنجليزية وأرقام أو شرطات فقط', 'error');
+      prefix.focus();
+      return;
+    }
+    if (settings.published && !settings.album) {
+      toast('اختر ألبومًا قبل نشر الصور', 'error');
+      album.focus();
+      return;
+    }
+    session.uploading = true;
+    draw();
+    let next = 0;
+    async function worker() {
+      while (state === session && next < jobs.length) {
+        const item = jobs[next++];
+        Object.assign(item, { state: 'uploading', message: 'جارٍ الرفع', progress: 0 });
+        draw();
+        try {
+          await uploadOne(item, settings, draw);
+          Object.assign(item, { state: 'done', message: 'تم الرفع', progress: 100 });
+        } catch (error) {
+          Object.assign(item, { state: 'failed', message: error.message });
+          if (error.status === 401 && state === session) endSession('انتهت الجلسة. سجّل الدخول مرة أخرى.');
+        }
         draw();
       }
     }
-    try{await Promise.all(Array.from({length:Math.min(4,jobs.length)},worker))}
-    finally{state.uploading=false;draw()}
-    await refresh();
-    const failed=jobs.filter(item=>item.state==='failed').length;
-    toast(failed?`تعذّر رفع ${failed} ملف. يمكنك إعادة المحاولة.`:'اكتمل رفع الصور',failed?'error':'success');
+    try { await Promise.all(Array.from({ length: Math.min(4, jobs.length) }, worker)); }
+    finally { session.uploading = false; draw(); }
+    if (state !== session) return;
+    const failed = jobs.filter(item => item.state === 'failed').length;
+    if (failed) {
+      try { await loadAdminData(); } catch { /* per-file results remain visible */ }
+      if (state === session) toast(`تعذّر رفع ${failed} ملف. يمكنك إعادة المحاولة.`, 'error');
+    } else await updateAfterChange('اكتمل رفع الصور');
   };
   draw();
 }
@@ -250,7 +700,7 @@ function uploadOne(item,{album,published,prefix},draw){
     };
     xhr.onload=()=>{
       if(xhr.status>=200&&xhr.status<300)resolve();
-      else reject(Error(xhr.response?.error||'تعذّر رفع الملف'));
+      else reject(Object.assign(Error(xhr.response?.error || 'تعذّر رفع الملف'), { status: xhr.status }));
     };
     xhr.onerror=()=>reject(Error('انقطع الاتصال أثناء رفع الملف'));
     xhr.ontimeout=()=>reject(Error('انتهت مهلة رفع الملف'));

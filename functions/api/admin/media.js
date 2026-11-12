@@ -1,4 +1,5 @@
 import { requireUser, audit } from "./_guard.js";
+import { isImageKey } from "../../_images.js";
 
 const MAX_LIMIT = 100;
 const parseLimit = value => Math.min(MAX_LIMIT, Math.max(1, value && Number.isInteger(Number(value)) ? Number(value) : 50));
@@ -36,18 +37,17 @@ export async function onRequestDelete({ request, env }) {
   if (!env.IMAGES) return Response.json({ error: "تخزين الصور غير مربوط" }, { status: 503 });
   let payload;
   try { payload = await request.json(); } catch { return Response.json({ error: "بيانات غير صالحة" }, { status: 400 }); }
-  const keys = Array.isArray(payload.keys) ? payload.keys : [payload.key];
-  const safeKeys = [...new Set(keys.map(value => String(value || "").replace(/[^a-zA-Z0-9_./-]/g, "")))];
-  if (!safeKeys.length || safeKeys.length > 100 || safeKeys.some(key => !key || key.split("/").includes(".."))) {
+  const keys = [...new Set(Array.isArray(payload?.keys) ? payload.keys : [payload?.key])];
+  if (!keys.length || keys.length > 100 || !keys.every(isImageKey)) {
     return Response.json({ error: "مسارات الصور غير صالحة" }, { status: 422 });
   }
-  await env.IMAGES.delete(safeKeys);
-  const placeholders = safeKeys.map(() => "?").join(", ");
+  await env.IMAGES.delete(keys);
+  const placeholders = keys.map(() => "?").join(", ");
   const [removed] = await env.DB.batch([
-    env.DB.prepare(`DELETE FROM photos WHERE object_key IN (${placeholders})`).bind(...safeKeys),
-    env.DB.prepare(`UPDATE batches SET cover_key = NULL WHERE cover_key IN (${placeholders})`).bind(...safeKeys)
+    env.DB.prepare(`DELETE FROM photos WHERE object_key IN (${placeholders})`).bind(...keys),
+    env.DB.prepare(`UPDATE batches SET cover_key = NULL WHERE cover_key IN (${placeholders})`).bind(...keys)
   ]);
   const photosRemoved = removed.meta.changes || 0;
-  await audit(env, auth.session, "delete", "image", safeKeys.join(","), { keys: safeKeys.length, photos_removed: photosRemoved });
-  return Response.json({ ok: true, keys: safeKeys, photos_removed: photosRemoved });
+  await audit(env, auth.session, "delete", "image", keys.join(","), { keys: keys.length, photos_removed: photosRemoved });
+  return Response.json({ ok: true, keys, photos_removed: photosRemoved });
 }

@@ -82,11 +82,20 @@
       surface.dataset.optics = 'svg';
     }
     const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
-    if ('ResizeObserver' in window) new ResizeObserver(schedule).observe(surface);
+    const observer = 'ResizeObserver' in window ? new ResizeObserver(schedule) : null;
+    if (observer) observer.observe(surface);
     else window.addEventListener('resize', schedule, { passive: true });
     opaque.addEventListener('change', schedule);
     fine.addEventListener('change', schedule);
     schedule();
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      observer?.disconnect();
+      window.removeEventListener('resize', schedule);
+      opaque.removeEventListener('change', schedule);
+      fine.removeEventListener('change', schedule);
+      root.remove();
+    };
   }
 
   const vertex = `
@@ -309,7 +318,19 @@
     });
   }
 
-  document.querySelectorAll('[data-glass-backdrop]').forEach(attachBackdropLens);
+  const adminRoot = document.body.classList.contains('admin-page') && document.getElementById('root');
+  if (adminRoot) {
+    let detach;
+    function mountAdminLens() {
+      detach?.();
+      const surface = adminRoot.querySelector('[data-glass-backdrop]');
+      detach = surface && attachBackdropLens(surface, 0);
+    }
+    adminRoot.addEventListener('admin:render', mountAdminLens);
+    mountAdminLens();
+  } else {
+    document.querySelectorAll('[data-glass-backdrop]').forEach(attachBackdropLens);
+  }
   document.querySelectorAll('[data-glass-photo]').forEach(attachPhotoLens);
   document.querySelectorAll('[data-glass-segments]').forEach(attachSegments);
 })();

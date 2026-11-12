@@ -53,22 +53,7 @@ body:has(dialog[open]) { overflow: hidden; }
   min-width: 0;
   gap: .6rem;
 }
-.archive-brand { flex-shrink: 1; color: inherit; }
-.archive-brand-mark {
-  display: grid;
-  place-items: center;
-  flex: 0 0 43px;
-  width: 43px;
-  height: 43px;
-  padding: 5px;
-  border-radius: 50%;
-  background: #0b2033;
-  box-shadow: inset 0 1px 0 #d8eaff40;
-}
-.archive-brand-mark img { width: 100%; height: 100%; }
-.archive-brand-name { display: grid; white-space: nowrap; line-height: 1.45; }
-.archive-brand-name strong { font-size: 1.03rem; }
-.archive-brand-name small { opacity: .85; font-size: .72rem; }
+.archive-brand .memory-brand-name { white-space: nowrap; }
 .archive-nav { gap: .15rem; }
 .archive-nav a, .archive-popover a {
   display: flex;
@@ -280,17 +265,17 @@ body:has(dialog[open]) { overflow: hidden; }
     margin-block: auto max(.35rem, env(safe-area-inset-bottom));
     max-height: calc(100dvh - 1.5rem);
   }
-  .archive-brand-mark { flex-basis: 36px; width: 36px; height: 36px; }
+  .archive-brand .memory-brand-mark { flex-basis: 36px; width: 36px; height: 36px; }
   .archive-brand { gap: .4rem; }
-  .archive-brand-name strong { font-size: .9rem; }
-  .archive-brand-name small { font-size: .68rem; }
+  .archive-brand .memory-brand-name strong { font-size: .9rem; }
+  .archive-brand .memory-brand-name small { font-size: .68rem; }
   .archive-header-cta { padding-inline: .6rem; font-size: .8rem; }
   #filters .filter-btn { padding-inline: .4rem; }
   .batch-toolbar-title { padding-inline-start: .35rem; font-size: .82rem; }
 }
 @media (max-width: 350px) {
-  .archive-brand-name strong { font-size: .82rem; }
-  .archive-brand-mark { flex-basis: 32px; width: 32px; height: 32px; }
+  .archive-brand .memory-brand-name strong { font-size: .82rem; }
+  .archive-brand .memory-brand-mark { flex-basis: 32px; width: 32px; height: 32px; }
   .archive-header-cta { padding-inline: .45rem; font-size: .73rem; }
   .hero-actions { gap: .4rem; }
   .hero-actions .glass-button { padding-inline: .65rem; }

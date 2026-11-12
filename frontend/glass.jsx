@@ -194,9 +194,26 @@ function PublishSwitch({ native, fallback, label }) {
   </span>;
 }
 
-function observeAdminSwitches() {
+function AdminSubmit({ fallback }) {
+  const [disabled, setDisabled] = useState(fallback.disabled);
+  useLayoutEffect(() => {
+    fallback.hidden = true;
+    const observer = new MutationObserver(() => setDisabled(fallback.disabled));
+    observer.observe(fallback, { attributes: true, attributeFilter: ['disabled'] });
+    setDisabled(fallback.disabled);
+    return () => {
+      observer.disconnect();
+      fallback.hidden = false;
+    };
+  }, [fallback]);
+  return <GlassButton type="submit" variant="filled" tint={ink} disabled={disabled}>
+    {fallback.textContent.trim()}
+  </GlassButton>;
+}
+
+function observeAdminControls() {
   const roots = new Map();
-  const selector = '[data-zaki-switch]';
+  const selector = '[data-zaki-switch], [data-zaki-submit]';
   function reconcile() {
     for (const [host, root] of roots) {
       if (!host.isConnected) {
@@ -205,18 +222,20 @@ function observeAdminSwitches() {
       }
     }
     for (const row of document.querySelectorAll(selector)) {
-      const host = row.querySelector('[data-switch-control]');
+      const host = row.querySelector('[data-admin-control]');
+      const fallback = row.querySelector('[data-admin-fallback]');
+      if (!host || !fallback) continue;
       if (roots.has(host)) continue;
-      const fallback = row.querySelector('[data-switch-fallback]');
-      const native = fallback.querySelector('input');
       const root = createRoot(host);
       roots.set(host, root);
-      root.render(<PublishSwitch native={native} fallback={fallback} label={fallback.textContent.trim()} />);
+      root.render(row.hasAttribute('data-zaki-submit')
+        ? <AdminSubmit fallback={fallback} />
+        : <PublishSwitch native={fallback.querySelector('input')} fallback={fallback} label={fallback.textContent.trim()} />);
     }
   }
-  const isSwitch = node => node.nodeType === 1 && (node.matches(selector) || node.querySelector(selector));
+  const isControl = node => node.nodeType === 1 && (node.matches(selector) || node.querySelector(selector));
   const observer = new MutationObserver(records => {
-    if (records.some(record => [...record.addedNodes, ...record.removedNodes].some(isSwitch))) reconcile();
+    if (records.some(record => [...record.addedNodes, ...record.removedNodes].some(isControl))) reconcile();
   });
   observer.observe(document.getElementById('root'), { childList: true, subtree: true });
   observer.observe(document.getElementById('modal-root'), { childList: true, subtree: true });
@@ -236,4 +255,4 @@ for (const host of document.querySelectorAll('[data-zaki]')) {
 }
 const scrubber = document.getElementById('photo-seek-control');
 if (scrubber) createRoot(scrubber).render(<PhotoSlider native={document.getElementById('photo-seek')} />);
-if (document.body.classList.contains('admin-page')) observeAdminSwitches();
+if (document.body.classList.contains('admin-page')) observeAdminControls();

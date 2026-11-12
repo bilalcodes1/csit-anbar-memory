@@ -1,7 +1,7 @@
 import { requireUser, audit } from "./_guard.js";
+import { isImageKey, isImageType } from "../../_images.js";
 
 const MAX_BYTES = 20 * 1024 * 1024;
-const TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 async function hasImageHeader(file) {
   const bytes = new Uint8Array(await file.slice(0, 12).arrayBuffer());
@@ -34,11 +34,10 @@ export async function onRequestPost({ request, env }) {
   if (!(file instanceof File) || file.size === 0 || file.size > MAX_BYTES) {
     return Response.json({ error: "اختر صورة حجمها لا يتجاوز 20 ميغابايت" }, { status: 422 });
   }
-  if (!/^[a-zA-Z0-9_.-]+(?:\/[a-zA-Z0-9_.-]+)*$/.test(key) || key.length > 512 ||
-      key.split("/").some(part => part === "." || part === "..")) {
+  if (!isImageKey(key)) {
     return Response.json({ error: "مسار الصورة غير صالح" }, { status: 422 });
   }
-  if (!TYPES.includes(file.type) || !await hasImageHeader(file)) {
+  if (!isImageType(file.type) || !await hasImageHeader(file)) {
     return Response.json({ error: "يسمح فقط بصور JPG وPNG وWebP صالحة" }, { status: 415 });
   }
 

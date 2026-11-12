@@ -7,6 +7,15 @@ export async function requireUser(request, env, adminOnly = false) {
   return { session };
 }
 
+export async function readPayload(request) {
+  const value = await request.json().catch(() => null);
+  return value && typeof value === "object" && !Array.isArray(value) ? value : null;
+}
+
+export function validId(id) {
+  return Number.isSafeInteger(id) && id > 0;
+}
+
 export async function audit(env, session, action, entityType, entityId = "", details = {}) {
   await env.DB.prepare(`
     INSERT INTO audit_log (user_id, action, entity_type, entity_id, details)
