@@ -9,12 +9,14 @@
   <link rel="stylesheet" href="/assets/archive-theme.css">
   <link rel="stylesheet" href="/assets/liquid-glass.css">
   <link rel="stylesheet" href="/assets/gallery.css">
+  <link rel="stylesheet" href="/assets/zakiglass.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;family=Noto+Kufi+Arabic:wght@400;500;600;700&amp;display=swap">
   <script src="/assets/archive-icons.js" defer></script>
   <script src="/assets/public.js" defer></script>
   <script src="/assets/liquid-glass.js" defer></script>
+  <script src="/assets/zakiglass.js" defer></script>
 </head>
 <body>
   <a href="#batches" class="archive-skip">انتقل إلى الأرشيف</a>
@@ -24,21 +26,23 @@
         <span class="archive-brand-mark"><img src="/assets/brand/memory-icon.svg" alt="" class="memory-icon"></span>
         <span class="archive-brand-name"><strong>ذاكرة الكلية</strong><small>جامعة الأنبار</small></span>
       </a>
-      <nav class="archive-nav" aria-label="التنقل الرئيسي">
+      <nav class="archive-nav" aria-label="التنقل الرئيسي" data-zaki="navigation">
         <a href="#batches">الدفعات</a>
         <a href="#find-photos">ابحث عن صورك</a>
         <a href="#story">حكايتنا</a>
       </nav>
       <div class="archive-header-actions">
         <a href="#batches" class="archive-header-cta glass-button glass-button--gold">استكشف الأرشيف</a>
-        <details class="glass-disclosure archive-quick-menu">
-          <summary class="glass-icon" aria-label="روابط الأرشيف"><span aria-hidden="true">•••</span></summary>
-          <nav class="glass-surface archive-popover" aria-label="روابط الأرشيف">
-            <a href="#batches">الدفعات</a>
-            <a href="#find-photos">ابحث عن صورك</a>
-            <a href="#story">حكايتنا</a>
-          </nav>
-        </details>
+        <div class="zaki-mobile-nav" data-zaki="mobile-navigation">
+          <details class="glass-disclosure archive-quick-menu">
+            <summary class="glass-icon" aria-label="روابط الأرشيف"><span aria-hidden="true">•••</span></summary>
+            <nav class="glass-surface archive-popover" aria-label="روابط الأرشيف">
+              <a href="#batches">الدفعات</a>
+              <a href="#find-photos">ابحث عن صورك</a>
+              <a href="#story">حكايتنا</a>
+            </nav>
+          </details>
+        </div>
       </div>
     </div>
   </header>
@@ -53,7 +57,7 @@
           <p class="mb-5 flex items-center gap-3 text-sm font-semibold tracking-widest text-[#e3c98d]"><span class="h-px w-10 bg-[#e3c98d]"></span>أرشيف الذكريات · منذ أول دفعة</p>
           <h1 class="display hero-title font-bold">كل دفعة<br><span class="text-[#e3c98d]">فصلٌ من الحكاية.</span></h1>
           <p class="hero-copy max-w-xl">مساحة تحفظ صور دفعات كلية علوم الحاسوب وتكنولوجيا المعلومات، وتوصل حكايات من سبقونا بمن سيكملون الطريق.</p>
-          <div class="hero-actions flex flex-wrap items-center gap-3">
+          <div class="hero-actions flex flex-wrap items-center gap-3" data-zaki="hero-actions">
             <a href="#batches" class="glass-button glass-button--gold">ابدأ الرحلة <i data-lucide="arrow-left" class="h-5 w-5"></i></a>
             <a href="#find-photos" class="glass-button glass-button--clear">ابحث عن صورك <i data-lucide="sparkles" class="h-5 w-5"></i></a>
             <a href="#story" class="hero-story-link">عن الفكرة</a>
@@ -95,7 +99,7 @@
           <p>اكتب اسمك وشوف صورك المنشورة، مرتبة حسب الدفعة والألبوم.</p>
           <form id="student-search" role="search" aria-labelledby="find-photos-title">
             <label for="student-name">اسم الطالب</label>
-            <div class="student-search-fields">
+            <div class="student-search-fields" data-zaki="student-search">
               <span class="glass-search"><input class="glass-field" id="student-name" name="name" type="search" maxlength="120" placeholder="اكتب الاسم الأول أو الاسم الكامل" autocomplete="off"></span>
               <button type="submit" class="glass-button glass-button--teal">ابحث عن الصور</button>
             </div>
@@ -112,16 +116,18 @@
           <p>الأرشيف الزمني</p>
           <h2 class="display">دفعاتنا، سنة بعد سنة</h2>
         </div>
-        <div class="archive-tools glass-surface">
-          <label class="archive-batch-search" for="batch-search">
-            <span>البحث في الدفعات</span>
-            <span class="glass-search"><input id="batch-search" type="search" class="glass-field" placeholder="ابحث بالسنة أو باسم الدفعة"></span>
-          </label>
-          <div class="glass-segmented" id="filters" data-glass-segments role="group" aria-label="فلترة الدفعات">
-            <span class="glass-selection" aria-hidden="true"></span>
-            <button type="button" data-filter="all" aria-pressed="true" class="filter-btn">الكل</button>
-            <button type="button" data-filter="graduated" aria-pressed="false" class="filter-btn">متخرجون</button>
-            <button type="button" data-filter="current" aria-pressed="false" class="filter-btn">حاليون</button>
+        <div id="archive-tools" data-zaki="archive-tools">
+          <div class="archive-tools glass-surface">
+            <label class="archive-batch-search" for="batch-search">
+              <span>البحث في الدفعات</span>
+              <span class="glass-search"><input id="batch-search" type="search" class="glass-field" placeholder="ابحث بالسنة أو باسم الدفعة"></span>
+            </label>
+            <div class="glass-segmented" id="filters" data-glass-segments role="group" aria-label="فلترة الدفعات">
+              <span class="glass-selection" aria-hidden="true"></span>
+              <button type="button" data-filter="all" aria-pressed="true" class="filter-btn">الكل</button>
+              <button type="button" data-filter="graduated" aria-pressed="false" class="filter-btn">متخرجون</button>
+              <button type="button" data-filter="current" aria-pressed="false" class="filter-btn">حاليون</button>
+            </div>
           </div>
         </div>
         <p id="archive-status" class="mb-4 text-sm text-slate-600" role="status">جارٍ تحميل الدفعات…</p>
@@ -171,6 +177,7 @@
           <button id="photo-prev" type="button" class="glass-icon glass-button--clear" aria-label="الصورة السابقة"><i data-lucide="arrow-left" class="photo-arrow-previous h-4 w-4" aria-hidden="true">→</i></button>
           <div class="photo-position">
             <input type="range" id="photo-seek" class="glass-range" min="1" max="1" value="1" aria-label="موضع الصورة" hidden>
+            <div id="photo-seek-control"></div>
             <span id="photo-count" dir="ltr" role="status"></span>
           </div>
           <button id="photo-next" type="button" class="glass-icon glass-button--clear" aria-label="الصورة التالية"><i data-lucide="arrow-left" class="h-4 w-4" aria-hidden="true">←</i></button>

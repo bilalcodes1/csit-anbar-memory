@@ -1,11 +1,10 @@
 const grid = document.getElementById('batch-grid');
 const status = document.getElementById('archive-status');
 const count = document.getElementById('batch-count');
-const search = document.getElementById('batch-search');
 const retry = document.getElementById('retry');
 const modal = document.getElementById('batch-modal');
 const modalContent = document.getElementById('modal-content');
-const filters = [...document.querySelectorAll('[data-filter]')];
+const archiveTools = document.getElementById('archive-tools');
 const archiveCovers = new Set([2022, 2023, 2024, 2026]);
 let batches;
 let activeFilter = 'all';
@@ -82,7 +81,7 @@ async function load() {
 
 function render() {
   if (!batches) return;
-  const query = normalize(search.value);
+  const query = normalize(document.getElementById('batch-search')?.value);
   const visible = batches.filter(batch =>
     (activeFilter === 'all' || batch.type === activeFilter) &&
     normalize([batch.year, batch.title, batch.department].join(' ')).includes(query)
@@ -224,18 +223,25 @@ modal.addEventListener('close', () => {
   else history.replaceState(null, '', '/#batches');
 });
 window.addEventListener('popstate', route);
-search.addEventListener('input', render);
-retry.addEventListener('click', load);
-filters.forEach(button => {
-  button.setAttribute('aria-pressed', String(button.dataset.filter === activeFilter));
-  button.addEventListener('click', () => {
-    activeFilter = button.dataset.filter;
-    for (const item of filters) {
-      item.setAttribute('aria-pressed', String(item === button));
-    }
-    render();
-  });
+archiveTools.addEventListener('input', event => {
+  if (event.target.id === 'batch-search' && !event.isComposing) render();
 });
+retry.addEventListener('click', load);
+
+function selectBatchFilter(filter) {
+  if (!['all', 'graduated', 'current'].includes(filter)) return;
+  activeFilter = filter;
+  archiveTools.dataset.activeFilter = filter;
+  archiveTools.querySelectorAll('[data-filter]').forEach(button => {
+    button.setAttribute('aria-pressed', String(button.dataset.filter === filter));
+  });
+  render();
+}
+archiveTools.addEventListener('click', event => {
+  const filter = event.target.closest('[data-filter]');
+  if (filter) selectBatchFilter(filter.dataset.filter);
+});
+archiveTools.addEventListener('archive:filter', event => selectBatchFilter(event.detail));
 icons();
 load();
 route();
@@ -274,6 +280,7 @@ function displayPhoto() {
   photoSeek.style.setProperty('--glass-range-progress', (count > 1 ? photoIndex / (count - 1) * 100 : 0) + '%');
   photoSeek.setAttribute('aria-valuetext', `الصورة ${photoIndex + 1} من ${count}`);
   photoSeek.hidden = prevPhoto.disabled = nextPhoto.disabled = count < 2;
+  photoSeek.dispatchEvent(new Event('archive:photo-position'));
 }
 
 function openPhoto(album, index) {
@@ -296,7 +303,7 @@ photoSeek.addEventListener('input', () => {
   displayPhoto();
 });
 photoModal.addEventListener('keydown', event => {
-  if (event.target === photoSeek || !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+  if (event.target.matches('input[type=range]') || !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
   event.preventDefault();
   stepPhoto(event.key === 'ArrowLeft' ? 1 : -1);
 });
@@ -533,7 +540,6 @@ function startHeroGallery() {
 startHeroGallery();
 
 const studentForm = document.getElementById('student-search');
-const studentName = document.getElementById('student-name');
 const studentStatus = document.getElementById('student-search-status');
 const studentResults = document.getElementById('student-results');
 let studentTimer;
@@ -604,7 +610,7 @@ function scheduleStudentSearch(delay) {
   studentRequest?.abort();
   studentResults.replaceChildren();
   studentStatus.textContent = '';
-  const name = studentName.value.trim();
+  const name = document.getElementById('student-name')?.value.trim() || '';
   if (name.length < 2) {
     if (name || !delay) studentStatus.textContent = 'اكتب حرفين على الأقل للبحث.';
     return;
@@ -616,6 +622,6 @@ studentForm.addEventListener('submit', event => {
   event.preventDefault();
   scheduleStudentSearch(0);
 });
-studentName.addEventListener('input', event => {
-  if (!event.isComposing) scheduleStudentSearch(280);
+studentForm.addEventListener('input', event => {
+  if (event.target.id === 'student-name' && !event.isComposing) scheduleStudentSearch(280);
 });

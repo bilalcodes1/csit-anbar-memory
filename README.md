@@ -48,7 +48,7 @@
 
 ## عرض الجامعة
 
-من مجلد المشروع، شغّل الأمر التالي باستخدام Node.js 22 أو أحدث. يجهّز Wrangler قاعدة وملفات محلية معزولة، ويطبع عنواني الأرشيف والإدارة وبيانات دخول حساب العرض.
+من مجلد المشروع، ثبّت الحزم باستخدام `npm ci` مع Node.js 22 أو أحدث، ثم شغّل الأمر التالي. يجهّز Wrangler قاعدة وملفات محلية معزولة، ويطبع عنواني الأرشيف والإدارة وبيانات دخول حساب العرض.
 
 ```bash
 sh scripts/demo.sh
@@ -64,7 +64,8 @@ sh scripts/demo.sh
 ## التشغيل المحلي للمطور
 
 ```bash
-sh scripts/build.sh
+npm ci
+npm run build
 npx wrangler d1 migrations apply csit-anbar-memory --local
 npx wrangler pages dev dist
 ```
