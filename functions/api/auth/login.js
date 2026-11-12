@@ -1,5 +1,6 @@
 import { hashPassword, verifyPassword } from "./_crypto.js";
 import { prepareSession } from "./_session.js";
+import { accountIdentity } from "./_accounts.js";
 
 export async function onRequestPost({ request, env }) {
   if (!env.DB) return Response.json({ error: "قاعدة البيانات غير مربوطة" }, { status: 503 });
@@ -25,7 +26,7 @@ export async function onRequestPost({ request, env }) {
       .bind(await hashPassword(password), user.id, user.password_hash));
   }
   await env.DB.batch(statements);
-  return Response.json({ user: { id: user.id, username: user.username, name: user.name, role: user.role } }, {
+  return Response.json({ user: accountIdentity(user) }, {
     headers: { "Set-Cookie": session.cookie }
   });
 }

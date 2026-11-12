@@ -10,7 +10,8 @@ assert.ok(['localhost', '127.0.0.1'].includes(new URL(base).hostname), 'This tes
 const run = Date.now().toString(36);
 const password = 'Local-smoke-' + run;
 const editorName = 'editor_' + run;
-const adminName = 'review_admin';
+const rootUsername = process.env.ARCHIVE_TEST_ROOT_USERNAME;
+const adminName = rootUsername || 'review_admin';
 const adminPassword = process.env.ARCHIVE_TEST_ADMIN_PASSWORD || 'Review-local-2026-only';
 const imagePath = process.env.ARCHIVE_TEST_IMAGE;
 const extension = imagePath ? extname(imagePath).slice(1).toLowerCase() : 'png';
@@ -62,7 +63,9 @@ await request('/api/auth/login', {
 const admin = cookie(await request('/api/auth/login', {
   method: 'POST', body: { username: adminName, password: adminPassword }
 }));
-assert.equal((await (await request('/api/auth/me', { cookie: admin })).json()).role, 'admin');
+const adminIdentity = await (await request('/api/auth/me', { cookie: admin })).json();
+assert.equal(adminIdentity.role, 'admin');
+assert.equal(adminIdentity.is_root, Boolean(rootUsername));
 
 const initial = await (await request('/api/admin/overview', { cookie: admin })).json();
 const year = Array.from({ length: 101 }, (_, index) => 2100 - index)
@@ -203,6 +206,7 @@ const createdUser = await (await request('/api/admin/users', {
 assert.equal(createdUser.user.username, editorName);
 assert.equal(createdUser.user.role, 'editor');
 assert.equal(createdUser.user.active, 1);
+assert.equal(createdUser.user.can_manage, true);
 assert.ok(!('password_hash' in createdUser.user));
 await request('/api/admin/users', {
   method: 'POST', cookie: admin, body: { username: editorName, password, name: 'حساب مكرر' }, status: 409
@@ -240,6 +244,62 @@ const devices = await (await request('/api/auth/device', { cookie: admin })).jso
 await request('/api/auth/device', { method: 'DELETE', cookie: admin, body: { id: devices[0].id } });
 await request('/api/auth/device', { method: 'PUT', body: { token: device.token }, status: 403 });
 await request('/api/auth/me', { cookie: deviceCookie, status: 401 });
+
+if (rootUsername) {
+  const endpoint = '/api/admin/users';
+  const createAccount = async (username, role, cookie = admin, status = 201) => {
+    const result = await request(endpoint, {
+      method: 'POST', cookie, status, body: { username, role, password, name: 'حساب اختبار صلاحيات' }
+    });
+    return (await result.json()).user;
+  };
+  const changeAccount = (cookie, id, fields, status = 200) =>
+    request(endpoint, { method: 'PATCH', cookie, status, body: { id, ...fields } });
+  const removeAccount = (cookie, id, status = 200) =>
+    request(endpoint, { method: 'DELETE', cookie, status, body: { id } });
+  const signIn = async user => cookie(await request('/api/auth/login', {
+    method: 'POST', body: { username: user.username, password }
+  }));
+  const manager = await createAccount('manager_' + run, 'admin');
+  const peer = await createAccount('peer_' + run, 'admin');
+  const managerCookie = await signIn(manager);
+  const peerCookie = await signIn(peer);
+  const peerDevice = await (await request('/api/auth/device', {
+    method: 'POST', cookie: peerCookie, status: 201
+  })).json();
+  const supervised = await createAccount('supervised_' + run, 'editor', managerCookie);
+  const managerView = await (await request(endpoint, { cookie: managerCookie })).json();
+  const root = managerView.find(account => account.id === adminIdentity.id);
+  assert.equal(root.is_root, true);
+  assert.equal(managerView.find(account => account.id === supervised.id).can_manage, true);
+
+  await createAccount('grant_' + run, 'admin', managerCookie, 403);
+  await createAccount(rootUsername.toUpperCase(), 'editor', managerCookie, 403);
+  await changeAccount(managerCookie, supervised.id, { name: 'مشرف معدّل' });
+  await changeAccount(managerCookie, supervised.id, { role: 'admin' }, 403);
+  for (const target of [root, manager, peer]) {
+    assert.equal(managerView.find(account => account.id === target.id).can_manage, false);
+    await changeAccount(managerCookie, target.id, { name: 'تعديل مرفوض', active: false, password }, 403);
+    await removeAccount(managerCookie, target.id, 403);
+  }
+  await changeAccount(admin, root.id, { active: false }, 403);
+  await removeAccount(admin, root.id, 403);
+  await request('/api/auth/me', { cookie: admin });
+  await request('/api/auth/me', { cookie: peerCookie });
+  await request('/api/auth/device', { method: 'PUT', body: { token: peerDevice.token } });
+
+  await changeAccount(admin, supervised.id, { role: 'admin' });
+  await changeAccount(managerCookie, supervised.id, { name: 'تعديل بعد الترقية' }, 403);
+  await changeAccount(admin, supervised.id, { role: 'editor' });
+  await changeAccount(managerCookie, supervised.id, { name: 'تعديل بعد إعادة الدور' });
+  await changeAccount(admin, peer.id, { name: 'مدير معدّل', active: false });
+  await request('/api/auth/me', { cookie: peerCookie, status: 401 });
+  await request('/api/auth/device', { method: 'PUT', body: { token: peerDevice.token }, status: 403 });
+  await changeAccount(admin, peer.id, { active: true });
+  await removeAccount(admin, peer.id);
+  await removeAccount(managerCookie, supervised.id);
+  await removeAccount(admin, manager.id);
+}
 
 if (!process.env.ARCHIVE_KEEP_FIXTURES) {
   await request('/api/admin/media', { method: 'DELETE', cookie: admin, body: { key } });

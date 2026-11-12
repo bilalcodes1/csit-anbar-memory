@@ -246,23 +246,33 @@ function mediaCard(file, managed = false) {
     </div>
   </article>`;
 }
+function accountRole(user) {
+  if (user.is_root) return 'المدير الرئيسي';
+  return user.role === 'admin' ? 'مدير' : 'مشرف';
+}
+function accountActions(user) {
+  if (user.can_manage) return `<div class="toolbar">
+    <button class="btn btn-soft btn-small" data-edit-user="${user.id}">${icons.edit} تعديل</button>
+    <button class="btn btn-soft btn-small" data-toggle-user="${user.id}" data-active="${user.active ? 0 : 1}">${user.active ? 'تعطيل' : 'تفعيل'}</button>
+    <button class="btn btn-danger btn-small" data-delete-user="${user.id}" aria-label="حذف حساب ${esc(user.name)}">${icons.trash}</button>
+  </div>`;
+  if (user.is_root) return '<span class="muted">حساب محمي</span>';
+  if (user.id === state.user.id) return '<span class="muted">حسابك الحالي</span>';
+  return '<span class="muted">إدارته للمدير الرئيسي</span>';
+}
 function usersPage() {
   const users = state.users;
-  return `<div class="section-head"><div><h2>المستخدمون والصلاحيات</h2><p>إدارة المديرين والمشرفين وحالة الحساب.</p></div>
+  return `<div class="section-head"><div><h2>المستخدمون والصلاحيات</h2><p>${state.user.is_root ? 'إدارة حسابات المديرين والمشرفين.' : 'إدارة حسابات المشرفين.'}</p></div>
     <button class="btn btn-primary" data-new-user>${icons.plus} إضافة مستخدم</button></div>
     <section class="card table-wrap" tabindex="0" role="region" aria-label="جدول المستخدمين"><table class="table">
       <thead><tr><th>المستخدم</th><th>الدور</th><th>الحالة</th><th>تاريخ الإنشاء</th><th>الإجراءات</th></tr></thead>
       <tbody>${users.map(user => `<tr><td><div class="row-copy"><strong>${esc(user.name)}</strong><small><bdi dir="ltr">@${esc(user.username)}</bdi></small></div></td>
-        <td>${user.role === 'admin' ? '<span class="badge badge-gold">مدير</span>' : '<span class="badge badge-gray">مشرف</span>'}</td>
+        <td><span class="badge ${user.role === 'admin' ? 'badge-gold' : 'badge-gray'}">${accountRole(user)}</span></td>
         <td>${user.active ? '<span class="badge badge-green">نشط</span>' : '<span class="badge badge-gray">معطل</span>'}</td>
         <td>${fmtDate(user.created_at)}</td>
-        <td>${user.id === state.user.id ? '<span class="muted">حسابك الحالي</span>' : `<div class="toolbar">
-          <button class="btn btn-soft btn-small" data-edit-user="${user.id}">${icons.edit} تعديل</button>
-          <button class="btn btn-soft btn-small" data-toggle-user="${user.id}" data-active="${user.active ? 0 : 1}">${user.active ? 'تعطيل' : 'تفعيل'}</button>
-          <button class="btn btn-danger btn-small" data-delete-user="${user.id}" aria-label="حذف حساب ${esc(user.name)}">${icons.trash}</button>
-        </div>`}</td></tr>`).join('')}</tbody></table></section>`;
+        <td>${accountActions(user)}</td></tr>`).join('')}</tbody></table></section>`;
 }
-function settingsPage(){return`<div class="section-head"><div><h2>الحساب والأمان</h2><p>جلسة المستخدم والأجهزة الموثوقة والإعدادات الفعلية.</p></div></div><div class="split"><section class="card" style="padding:22px"><h2 class="display" style="font-size:19px">الحساب الحالي</h2><div class="batch-row" style="padding-right:0;padding-left:0"><div class="row-copy"><strong>${esc(state.user.name)}</strong><small><bdi dir="ltr">@${esc(state.user.username)}</bdi> · ${state.user.role==='admin'?'مدير':'مشرف'}</small></div><span class="badge badge-green">جلسة نشطة</span></div><button class="btn btn-danger" id="logoutSettings">تسجيل الخروج من هذا الجهاز</button></section><section class="card" style="padding:22px"><div class="section-head" style="margin-top:0"><div><h2>الدخول السريع</h2><p>باركودات هذا الحساب قابلة للإلغاء.</p></div><button class="btn btn-gold btn-small" id="newDevice">${icons.qr} توليد</button></div><div>${state.devices.filter(d=>!d.revoked).map(d=>`<div class="batch-row" style="padding-right:0;padding-left:0"><div class="row-copy"><strong>${esc(d.label)}</strong><small>آخر استخدام: ${fmtDate(d.last_used_at)}</small></div><button class="btn btn-danger btn-small" data-revoke-device="${d.id}">إلغاء</button></div>`).join('')||empty('لا توجد أجهزة موثوقة')}</div></section></div>`}
+function settingsPage(){return`<div class="section-head"><div><h2>الحساب والأمان</h2><p>جلسة المستخدم والأجهزة الموثوقة والإعدادات الفعلية.</p></div></div><div class="split"><section class="card" style="padding:22px"><h2 class="display" style="font-size:19px">الحساب الحالي</h2><div class="batch-row" style="padding-right:0;padding-left:0"><div class="row-copy"><strong>${esc(state.user.name)}</strong><small><bdi dir="ltr">@${esc(state.user.username)}</bdi> · ${accountRole(state.user)}</small></div><span class="badge badge-green">جلسة نشطة</span></div><button class="btn btn-danger" id="logoutSettings">تسجيل الخروج من هذا الجهاز</button></section><section class="card" style="padding:22px"><div class="section-head" style="margin-top:0"><div><h2>الدخول السريع</h2><p>باركودات هذا الحساب قابلة للإلغاء.</p></div><button class="btn btn-gold btn-small" id="newDevice">${icons.qr} توليد</button></div><div>${state.devices.filter(d=>!d.revoked).map(d=>`<div class="batch-row" style="padding-right:0;padding-left:0"><div class="row-copy"><strong>${esc(d.label)}</strong><small>آخر استخدام: ${fmtDate(d.last_used_at)}</small></div><button class="btn btn-danger btn-small" data-revoke-device="${d.id}">إلغاء</button></div>`).join('')||empty('لا توجد أجهزة موثوقة')}</div></section></div>`}
 function mediaRecords() {
   const photos = new Map();
   for (const batch of state.data.batches || []) {
@@ -464,7 +474,10 @@ function bind() {
     document.getElementById('uploadAlbum').focus();
   });
   click('[data-new-user]', () => openUserModal());
-  click('[data-edit-user]', button => openUserModal(findUser(button.dataset.editUser)));
+  click('[data-edit-user]', button => {
+    const user = findUser(button.dataset.editUser);
+    if (user?.can_manage) openUserModal(user);
+  });
   click('[data-delete-user]', button => deleteEntity(button, '/api/admin/users', { id: button.dataset.deleteUser }, 'الحساب', 'users'));
   click('[data-toggle-user]', toggleUser);
   click('#newDevice', createDevice);
@@ -685,8 +698,31 @@ function openAlbumModal(batchId,a){const m=modal(a?'تعديل الألبوم':'
 function openStudentModal(batchId,s){const m=modal(s?'تعديل اسم':'إضافة اسم',`<form id="entityForm" class="form-grid">${s?'':'<div class="field span-2"><label>الدفعة<span class="hint">اختر الدفعة الخاصة بالطالب.</span></label><select class="select" name="batch_id" required>'+ (state.data.batches||[]).map(b=>`<option value="${b.id}" ${b.id==batchId?'selected':''}>${esc(b.year)} · ${esc(b.title)}</option>`).join('')+'</select></div>'}<div class="field span-2"><label>الاسم الكامل<span class="hint">اكتب الاسم كما تريد عرضه للزوار.</span></label><input class="input" name="full_name" required placeholder="مثال: أحمد محمد علي" value="${esc(s?.full_name||'')}"></div><div class="field"><label>الترتيب<span class="hint">رقم أصغر يظهر أولًا.</span></label><input class="input" name="sort_order" type="number" placeholder="0" value="${esc(s?.sort_order||0)}"></div><div class="glass-switch-row form-switch" data-zaki-switch><label class="glass-switch-row" data-admin-fallback><input name="published" type="checkbox" class="glass-switch" role="switch" ${s?.published?'checked':''}> <span>منشور</span></label><span data-admin-control></span></div>${submitButton('حفظ الاسم')}</form>`);
   bindEntityForm(m, data => sendJSON('/api/admin/students', s ? 'PATCH' : 'POST', s ? { ...data, id: s.id } : data), 'تم حفظ الاسم');
 }
-function openUserModal(u){const editing=Boolean(u);const m=modal(editing?'تعديل المستخدم':'إضافة مستخدم جديد',`<form id="entityForm" class="form-grid"><div class="field span-2"><label>الاسم<span class="hint">الاسم الظاهر داخل لوحة الإدارة.</span></label><input class="input" name="name" required value="${esc(u?.name||'')}"></div><div class="field"><label>اسم المستخدم<span class="hint">أحرف إنجليزية أو أرقام أو _ أو -، من 3 إلى 32 رمزًا.</span></label><input class="input" name="username" pattern="[a-zA-Z0-9_\\-]{3,32}" required placeholder="مثال: supervisor1" value="${esc(u?.username||'')}" ${editing?'disabled':''}></div><div class="field"><label>الدور<span class="hint">المدير يملك صلاحيات الإدارة الكاملة.</span></label><select class="select" name="role"><option value="editor" ${u?.role==='editor'?'selected':''}>مشرف</option><option value="admin" ${u?.role==='admin'?'selected':''}>مدير</option></select></div><div class="field span-2"><label>كلمة المرور ${editing?'الجديدة (اختياري)':''}<span class="hint">12 رمزًا على الأقل، واستخدم كلمة قوية.</span></label><input class="input" name="password" type="password" autocomplete="new-password" minlength="12" ${editing?'':'required'} placeholder="أدخل كلمة المرور"><small class="muted">12 رمزًا على الأقل</small></div>${submitButton(editing?'حفظ التعديلات':'إنشاء الحساب')}</form>`);
-  bindEntityForm(m, data => sendJSON('/api/admin/users', editing ? 'PATCH' : 'POST', editing ? { ...data, id: u.id } : data),
+function openUserModal(user) {
+  const editing = Boolean(user);
+  const dialog = modal(editing ? 'تعديل المستخدم' : 'إضافة مستخدم جديد', `<form id="entityForm" class="form-grid">
+    <div class="field span-2">
+      <label>الاسم<span class="hint">الاسم الظاهر داخل لوحة الإدارة.</span></label>
+      <input class="input" name="name" required value="${esc(user?.name || '')}">
+    </div>
+    <div class="field">
+      <label>اسم المستخدم<span class="hint">أحرف إنجليزية أو أرقام أو _ أو -، من 3 إلى 32 رمزًا.</span></label>
+      <input class="input" name="username" pattern="[a-zA-Z0-9_\\-]{3,32}" required placeholder="مثال: supervisor1" value="${esc(user?.username || '')}" ${editing ? 'disabled' : ''}>
+    </div>
+    <div class="field">
+      <label>الدور<span class="hint">${state.user.is_root ? 'المدير يدير حسابات المشرفين ومحتوى الأرشيف.' : 'الحسابات التي تنشئها تأخذ دور المشرف.'}</span></label>
+      <select class="select" name="role">
+        <option value="editor" ${user?.role === 'editor' ? 'selected' : ''}>مشرف</option>
+        ${state.user.is_root ? `<option value="admin" ${user?.role === 'admin' ? 'selected' : ''}>مدير</option>` : ''}
+      </select>
+    </div>
+    <div class="field span-2">
+      <label>كلمة المرور ${editing ? 'الجديدة (اختياري)' : ''}<span class="hint">12 رمزًا على الأقل، واستخدم كلمة قوية.</span></label>
+      <input class="input" name="password" type="password" autocomplete="new-password" minlength="12" ${editing ? '' : 'required'} placeholder="أدخل كلمة المرور">
+    </div>
+    ${submitButton(editing ? 'حفظ التعديلات' : 'إنشاء الحساب')}
+  </form>`);
+  bindEntityForm(dialog, data => sendJSON('/api/admin/users', editing ? 'PATCH' : 'POST', editing ? { ...data, id: user.id } : data),
     editing ? 'تم تعديل الحساب' : 'تم إنشاء الحساب', {
       pending: editing ? 'جارٍ حفظ التعديلات…' : 'جارٍ إنشاء الحساب…',
       onSaved: editing ? message => updateAfterChange(message, 'users') : addCreatedUser

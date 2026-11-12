@@ -1,4 +1,5 @@
 import { requireUser } from "./_guard.js";
+import { accountIdentity, managedAccount } from "../auth/_accounts.js";
 
 const MAX_LIMIT = 1000;
 const limitOf = (value, fallback = 50) => Math.min(MAX_LIMIT, Math.max(1, value && Number.isInteger(Number(value)) ? Number(value) : fallback));
@@ -66,7 +67,7 @@ export async function onRequestGet({ request, env }) {
   const [[countRows, auditRows, batchRows, albumRows, studentRows, photoRows, userRows], media] =
     await Promise.all([env.DB.batch(statements), summary ? null : mediaPage(env, url)]);
   const data = {
-    user: { id: auth.session.user_id, username: auth.session.username, name: auth.session.name, role: auth.session.role },
+    user: accountIdentity(auth.session, auth.session.user_id),
     counts: countRows.results[0],
     batches: batchRows.results,
     audit: auditRows.results
@@ -94,6 +95,6 @@ export async function onRequestGet({ request, env }) {
   data.media = media;
   data.counts.media = media.objects.length;
   data.counts.storage_bytes = media.objects.reduce((total, object) => total + Number(object.size || 0), 0);
-  if (isAdmin) data.users = userRows.results;
+  if (isAdmin) data.users = userRows.results.map(account => managedAccount(account, auth.session));
   return Response.json(data);
 }
