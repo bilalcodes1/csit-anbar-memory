@@ -10,13 +10,12 @@ function sessionToken(request) {
   return /^[a-f0-9-]{68}$/.test(token || "") ? token : null;
 }
 
-export async function createSession(env, userId, deviceId = null) {
+export function prepareSession(env, userId, deviceId = null) {
   const token = randomToken();
   const expires = new Date(Date.now() + SESSION_DAYS * 86400000).toISOString();
-  await env.DB.prepare("INSERT INTO sessions (id, user_id, expires_at, device_id) VALUES (?, ?, ?, ?)")
-    .bind(token, userId, expires, deviceId).run();
   return {
-    token,
+    insert: env.DB.prepare("INSERT INTO sessions (id, user_id, expires_at, device_id) VALUES (?, ?, ?, ?)")
+      .bind(token, userId, expires, deviceId),
     cookie: `${COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${SESSION_DAYS * 86400}`
   };
 }

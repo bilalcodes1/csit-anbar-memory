@@ -75,6 +75,7 @@
       }
       status.textContent = loading ? 'جارٍ تحميل الصور…' : failed ? 'تعذّر تحميل صور المكتبة. أعد المحاولة.'
         : matches.length ? '' : 'لا توجد صور مطابقة ضمن الصور المعروضة.';
+      status.toggleAttribute('data-loading', loading);
       grid.setAttribute('aria-busy', String(loading));
       more.hidden = matches.length <= limit && cursor === null;
       more.disabled = loading;

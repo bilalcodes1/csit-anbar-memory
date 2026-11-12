@@ -47,6 +47,7 @@ const deepLink = await request('/batch/2026');
 assert.match(await deepLink.text(), /id="batch-modal"/);
 await request('/admin');
 await request('/api/admin/overview', { status: 401 });
+await request('/api/admin/overview?summary=1', { status: 401 });
 await request('/api/admin/media', { status: 401 });
 await request('/api/activities', { status: 410 });
 await request('/api/batches/not-a-year', { status: 404 });
@@ -91,6 +92,18 @@ await request('/api/admin/students', {
 const overview = await (await request('/api/admin/overview', { cookie: admin })).json();
 const managedBatch = overview.batches.find(item => item.id === batch.id);
 const album = managedBatch.albums[0];
+const summary = await (await request('/api/admin/overview?summary=1', { cookie: admin })).json();
+assert.equal(summary.counts.batches, overview.counts.batches);
+assert.equal(summary.counts.albums, overview.counts.albums);
+assert.equal(summary.user.id, overview.user.id);
+assert.ok(summary.batches.length <= 5);
+for (const item of summary.batches) {
+  const detailed = overview.batches.find(batch => batch.id === item.id);
+  assert.equal(item.album_count, detailed.albums.length);
+  assert.equal(item.photo_count, detailed.albums.reduce((count, album) => count + album.photos.length, 0));
+  assert.ok(!('albums' in item) && !('students' in item));
+}
+assert.ok(!('users' in summary) && !('media' in summary));
 function uploadForm({ replace = false, valid = true } = {}) {
   const form = new FormData();
   form.set('file', new File([valid ? fixture : 'invalid'], 'test.' + extension, { type: contentType }));
@@ -184,12 +197,18 @@ assert.match(publicPhoto.headers.get('cache-control'), /no-store/);
 await request('/api/admin/upload', { method: 'POST', cookie: admin, body: uploadForm({ replace: true }) });
 assert.equal((await (await request('/api/batches/' + year)).json()).albums[0].photos[0].caption, 'وصف صورة اختبار');
 
-await request('/api/admin/users', {
+const createdUser = await (await request('/api/admin/users', {
   method: 'POST', cookie: admin, body: { username: editorName, password, name: 'مشرف اختبار محلي' }, status: 201
-});
+})).json();
+assert.equal(createdUser.user.username, editorName);
+assert.equal(createdUser.user.role, 'editor');
+assert.equal(createdUser.user.active, 1);
+assert.ok(!('password_hash' in createdUser.user));
 await request('/api/admin/users', {
   method: 'POST', cookie: admin, body: { username: editorName, password, name: 'حساب مكرر' }, status: 409
 });
+const userAudit = (await (await request('/api/admin/overview?summary=1', { cookie: admin })).json()).audit;
+assert.equal(userAudit.filter(entry => entry.action === 'create' && entry.entity_type === 'user' && entry.entity_id === editorName).length, 1);
 const editor = cookie(await request('/api/auth/login', {
   method: 'POST', body: { username: editorName, password }
 }));
@@ -204,6 +223,7 @@ await request('/api/admin/students', {
   method: 'PATCH', cookie: admin, body: { id: studentIds[0], full_name: '  ' }, status: 422
 });
 const editorId = (await (await request('/api/auth/me', { cookie: editor })).json()).id;
+assert.equal(editorId, createdUser.user.id);
 const editorDevice = await (await request('/api/auth/device', { method: 'POST', cookie: editor, status: 201 })).json();
 await request('/api/admin/users', { method: 'PATCH', cookie: admin, body: { id: editorId, active: false } });
 await request('/api/auth/me', { cookie: editor, status: 401 });

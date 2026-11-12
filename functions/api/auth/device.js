@@ -1,4 +1,4 @@
-import { getSession, unauthorized, forbidden, createSession } from "./_session.js";
+import { getSession, unauthorized, forbidden, prepareSession } from "./_session.js";
 import { hashToken, randomToken } from "./_crypto.js";
 
 const DEVICE_DAYS = 90;
@@ -27,8 +27,11 @@ export async function onRequestPut({ request, env }) {
     WHERE token_hash = ? AND revoked = 0 AND julianday(expires_at) > julianday('now')
   `).bind(tokenHash).first();
   if (!device || !device.active) return forbidden();
-  await env.DB.prepare("UPDATE device_tokens SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?").bind(device.id).run();
-  const session = await createSession(env, device.user_id, device.id);
+  const session = prepareSession(env, device.user_id, device.id);
+  await env.DB.batch([
+    env.DB.prepare("UPDATE device_tokens SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?").bind(device.id),
+    session.insert
+  ]);
   return Response.json({ ok: true }, { headers: { "Set-Cookie": session.cookie } });
 }
 

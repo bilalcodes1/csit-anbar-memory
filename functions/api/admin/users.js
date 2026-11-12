@@ -20,11 +20,20 @@ export async function onRequestPost({ request, env }) {
   if (!/^[a-z0-9_-]{3,32}$/.test(username) || name.length < 2 || password.length < 12 || password.length > 1024) {
     return Response.json({ error: "اسم المستخدم الإنجليزي والاسم وكلمة المرور (12 رمزًا على الأقل) مطلوبة" }, { status: 422 });
   }
-  const result = await env.DB.prepare("INSERT INTO users (email, username, name, password_hash, role) VALUES (?, ?, ?, ?, ?) ON CONFLICT DO NOTHING")
-    .bind(`${username}@local.invalid`, username, name, await hashPassword(password), role).run();
-  if (!result.meta.changes) return Response.json({ error: "اسم المستخدم مستخدم بالفعل" }, { status: 409 });
-  await audit(env, auth.session, "create", "user", username, { role });
-  return Response.json({ ok: true }, { status: 201 });
+  const hash = await hashPassword(password);
+  const [insert] = await env.DB.batch([
+    env.DB.prepare(`
+      INSERT INTO users (email, username, name, password_hash, role) VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT DO NOTHING RETURNING id, username, name, role, active, created_at
+    `).bind(`${username}@local.invalid`, username, name, hash, role),
+    env.DB.prepare(`
+      INSERT INTO audit_log (user_id, action, entity_type, entity_id, details)
+      SELECT ?, 'create', 'user', ?, ? WHERE changes() = 1
+    `).bind(auth.session.user_id, username, JSON.stringify({ role }))
+  ]);
+  const [user] = insert.results;
+  if (!user) return Response.json({ error: "اسم المستخدم مستخدم بالفعل" }, { status: 409 });
+  return Response.json({ ok: true, user }, { status: 201 });
 }
 
 export async function onRequestPatch({ request, env }) {

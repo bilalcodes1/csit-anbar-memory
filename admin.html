@@ -7,27 +7,36 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="referrer" content="no-referrer">
   <title>إدارة ذاكرة الكلية</title>
-  <script src="/assets/qr.js" defer></script>
   <link rel="icon" href="assets/brand/memory-icon.svg">
   <link rel="stylesheet" href="/assets/liquid-glass.css">
   <link rel="stylesheet" href="/assets/admin.css">
-  <link rel="stylesheet" href="/assets/zakiglass.css">
   <script src="/assets/liquid-glass.js" defer></script>
   <script src="/assets/admin-cover.js" defer></script>
-  <script src="/assets/zakiglass.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;family=Noto+Kufi+Arabic:wght@400;500;600;700&amp;display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;family=Noto+Kufi+Arabic:wght@400;500;600;700&amp;display=swap" media="print" onload="this.onload=null;this.media='all'">
 </head>
 <body class="admin-page">
-<div id="root"><main class="login-wrap"><p role="status" style="color:white">جارٍ تحميل لوحة الإدارة…</p></main></div>
+<div id="root"><main class="login-wrap"><div class="admin-startup glass-surface glass-on-media">
+  <img src="/assets/brand/memory-icon.svg" alt="" width="46" height="46">
+  <div class="admin-progress" role="status"><span class="admin-spinner" aria-hidden="true"></span><span id="startup-status">جارٍ فتح لوحة الإدارة…</span></div>
+  <div class="admin-track" aria-hidden="true"></div>
+</div></main></div>
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <script>
 const root=document.getElementById('root'),toastEl=document.getElementById('toast');
+const viewSources = {
+  overview: { key: 'summary', path: '/api/admin/overview?summary=1', loading: 'جارٍ تحميل النظرة العامة…' },
+  batches: { key: 'data', path: '/api/admin/overview', loading: 'جارٍ تحميل الدفعات والألبومات…' },
+  media: { key: 'data', path: '/api/admin/overview', loading: 'جارٍ تحميل مكتبة الصور…' },
+  users: { key: 'users', path: '/api/admin/users', loading: 'جارٍ تحميل المستخدمين…' },
+  settings: { key: 'devices', path: '/api/auth/device', loading: 'جارٍ تحميل الأجهزة الموثوقة…' }
+};
 function newSession() {
   return {
-    user: null, view: 'overview', data: null, selectedBatch: null, mediaCursor: '', devices: [],
+    user: null, view: 'overview', summary: null, data: null, users: null, devices: null,
+    selectedBatch: null, mediaCursor: '', viewError: '', requests: {},
     uploadQueue: [], uploadSettings: { album: '', prefix: '', published: false }
   };
 }
@@ -54,6 +63,37 @@ async function api(url, options = {}) {
 function sendJSON(url, method, data) {
   return api(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
 }
+function loadScript(path) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = path;
+    script.onload = resolve;
+    script.onerror = () => { script.remove(); reject(Error('تعذّر تحميل الملف. حاول مرة أخرى.')); };
+    document.head.append(script);
+  });
+}
+let glassScheduled = false;
+function enhanceAdmin() {
+  if (glassScheduled) return;
+  glassScheduled = true;
+  const load = () => {
+    const style = document.createElement('link');
+    style.rel = 'stylesheet';
+    style.href = '/assets/zakiglass.css';
+    style.media = 'print';
+    style.addEventListener('load', () => {
+      style.media = 'all';
+      void loadScript('/assets/zakiglass.js').catch(() => {});
+    }, { once: true });
+    document.head.append(style);
+  };
+  if (window.requestIdleCallback) requestIdleCallback(load, { timeout: 600 });
+  else setTimeout(load, 0);
+}
+function progressMarkup(message) {
+  return `<div class="admin-progress" role="status"><span class="admin-spinner" aria-hidden="true"></span><span>${esc(message)}</span></div>
+    <div class="admin-track" aria-hidden="true"></div>`;
+}
 function adminBrand() {
   return `<div class="memory-brand">
     <span class="memory-brand-mark"><img src="/assets/brand/memory-icon.svg" alt=""></span>
@@ -64,10 +104,15 @@ function submitButton(label) {
   return `<div class="admin-submit span-2" data-zaki-submit>
     <button class="btn btn-primary" type="submit" data-admin-fallback>${esc(label)}</button>
     <span data-admin-control></span>
+    <div class="submit-progress" data-submit-progress hidden>${progressMarkup('')}</div>
   </div>`;
 }
-function setFormBusy(form, busy) {
-  form.toggleAttribute('aria-busy', busy);
+function setFormBusy(form, message = '') {
+  const busy = Boolean(message);
+  form.toggleAttribute('data-submitting', busy);
+  const progress = form.querySelector('[data-submit-progress]');
+  progress.hidden = !busy;
+  progress.querySelector('.admin-progress span:last-child').textContent = message;
   form.querySelectorAll('button[type="submit"]').forEach(button => { button.disabled = busy; });
 }
 function login(error = '') {
@@ -85,24 +130,27 @@ function login(error = '') {
     </form>
   </section></main>`;
   root.dispatchEvent(new Event('admin:render'));
+  enhanceAdmin();
   const form = document.getElementById('loginForm');
   form.onsubmit = async event => {
     event.preventDefault();
-    if (form.hasAttribute('aria-busy')) return;
+    if (form.hasAttribute('data-submitting')) return;
     const feedback = form.querySelector('[role="alert"]');
     feedback.hidden = true;
-    setFormBusy(form, true);
+    setFormBusy(form, 'جارٍ تسجيل الدخول…');
     try {
       const { user } = await sendJSON('/api/auth/login', 'POST', Object.fromEntries(new FormData(form)));
       state.user = user;
-      await boot();
+      setFormBusy(form, 'جارٍ تجهيز لوحة الإدارة…');
+      if (await loadView('overview')) render();
     } catch (error) {
+      if (!form.isConnected) return;
       feedback.textContent = error.message;
       feedback.hidden = false;
       form.elements.password.value = '';
       form.elements.password.focus();
     } finally {
-      setFormBusy(form, false);
+      setFormBusy(form);
     }
   };
 }
@@ -111,33 +159,58 @@ function endSession(message) {
   state = newSession();
   login(message);
 }
-async function loadAdminData() {
+function invalidate(key) {
+  state[key] = null;
+  state.requests[key] = (state.requests[key] || 0) + 1;
+}
+async function loadView(view) {
   const session = state;
-  const load = session.dataLoad = (session.dataLoad || 0) + 1;
-  const [data, devices] = await Promise.all([api('/api/admin/overview'), api('/api/auth/device')]);
-  if (state !== session || session.dataLoad !== load) return false;
-  Object.assign(state, { user: data.user, data, devices, mediaCursor: '' });
-  if (state.view === 'users' && state.user.role !== 'admin') state.view = 'overview';
-  if (!data.batches.some(batch => batch.id === state.selectedBatch)) state.selectedBatch = null;
-  render();
+  const { key, path } = viewSources[view];
+  const request = session.requests[key] = (session.requests[key] || 0) + 1;
+  const data = await api(path);
+  if (state !== session || session.requests[key] !== request) return false;
+  state[key] = data;
+  if (data.user) state.user = data.user;
+  if (key === 'data') {
+    state.mediaCursor = '';
+    if (!data.batches.some(batch => batch.id === state.selectedBatch)) state.selectedBatch = null;
+  }
   return true;
 }
-async function boot() {
+async function loadStorage(summary) {
+  if (summary.storagePending || summary.counts.storage_bytes !== undefined) return;
+  summary.storagePending = true;
   const session = state;
-  try { await loadAdminData(); }
-  catch (error) { if (state === session) endSession(error.message); }
+  try {
+    const { objects } = await api('/api/admin/media?limit=50');
+    summary.counts.storage_bytes = objects.reduce((sum, object) => sum + object.size, 0);
+  } catch {
+    summary.counts.storage_bytes = null;
+  }
+  if (state !== session || state.summary !== summary) return;
+  const value = document.getElementById('overviewStorage');
+  if (value) value.innerHTML = storageValue(summary.counts.storage_bytes);
+}
+function storageValue(bytes) {
+  if (bytes === undefined) return '<span class="admin-spinner" role="status" aria-label="جارٍ قياس حجم التخزين"></span>';
+  if (bytes === null) return '<span aria-label="تعذّر تحميل حجم التخزين">—</span>';
+  return esc(fmtBytes(bytes));
 }
 function layout(){return`<div class="shell"><aside id="sidebar" class="sidebar glass-surface glass-on-media">${adminBrand()}<nav class="nav" aria-label="أقسام لوحة الإدارة">${[['overview','grid','نظرة عامة'],['batches','layers','الدفعات والألبومات'],['media','image','مكتبة الصور'],...(state.user.role==='admin'?[['users','users','المستخدمون']]:[]),['settings','settings','الحساب والأمان']].map(([id,ic,label])=>`<button data-nav="${id}" class="${state.view===id?'active':''}" ${state.view===id?'aria-current="page"':''}>${icons[ic]}<span>${label}</span></button>`).join('')}</nav><div class="sidebar-footer">جلسة آمنة · ${esc(state.user.name)}<br><span>آخر مزامنة: الآن</span></div></aside><div id="sidebarScrim" class="sidebar-scrim" aria-hidden="true"></div><div class="main"><header class="topbar glass-surface" data-glass-backdrop><div class="topbar-heading"><button id="menuBtn" aria-label="فتح قائمة الإدارة" aria-controls="sidebar" aria-expanded="false" class="menu-btn glass-icon">${icons.menu}</button><div class="topbar-title"><h1 tabindex="-1">${pageTitle()}</h1></div></div><div class="top-actions"><button id="refreshBtn" class="btn btn-soft btn-small" aria-label="تحديث">${icons.refresh} <span class="top-action-label">تحديث</span></button><div class="avatar">${esc((state.user.name||'م')[0])}</div><button id="logoutBtn" class="btn btn-soft btn-small">خروج</button></div></header><main class="content">${pages()}</main></div></div>`}
 function pageTitle(){return({overview:'نظرة عامة',batches:'الدفعات والألبومات',media:'مكتبة الصور والرفع',users:'المستخدمون والصلاحيات',settings:'الحساب والأمان'})[state.view]}
 function pages() {
+  const source = viewSources[state.view];
   const page = { overview: overviewPage, batches: batchesPage, media: mediaPage, users: usersPage, settings: settingsPage }[state.view];
-  return `<section class="page active">${page()}</section>`;
+  const content = state[source.key] ? page() : `<div class="card view-pending">${state.viewError
+    ? `<p role="alert">${esc(state.viewError)}</p><button class="btn btn-soft" data-retry-view>إعادة المحاولة</button>`
+    : progressMarkup(source.loading)}</div>`;
+  return `<section class="page active">${content}</section>`;
 }
-function overviewPage(){const s=state.data.counts||{};return`<div class="grid stats"><div class="card stat"><span class="stat-label">إجمالي الدفعات</span><strong class="stat-value">${s.batches||0}</strong><span class="stat-icon">${icons.layers}</span></div><div class="card stat"><span class="stat-label">الألبومات</span><strong class="stat-value">${s.albums||0}</strong><span class="stat-icon">${icons.grid}</span></div><div class="card stat"><span class="stat-label">الصور الموثقة</span><strong class="stat-value">${s.photos||0}</strong><span class="stat-icon">${icons.image}</span></div><div class="card stat"><span class="stat-label">حجم التخزين</span><strong class="stat-value stat-storage">${fmtBytes(s.storage_bytes)}</strong><span class="stat-icon">${icons.upload}</span></div></div><div class="split" style="margin-top:22px"><section class="card"><div class="section-head" style="padding:0 20px"><div><h2>آخر الدفعات</h2><p>أحدث الدفعات في الأرشيف</p></div><button class="btn btn-soft btn-small" data-nav="batches">إدارة الدفعات</button></div><div>${(state.data.batches||[]).slice(0,5).map(batchRow).join('')||empty('لا توجد دفعات بعد')}</div></section><section class="card"><div class="section-head" style="padding:0 20px"><div><h2>آخر العمليات</h2><p>سجل النشاطات الإدارية</p></div></div><div>${(state.data.audit||[]).slice(0,7).map(a=>`<div class="batch-row"><div class="row-copy"><strong>${esc(actionLabel(a.action))}</strong><small>${esc(entityLabel(a.entity_type))} · ${esc(a.name||a.username||'النظام')}</small></div><small class="muted">${fmtDate(a.created_at)}</small></div>`).join('')||empty('لا توجد عمليات بعد')}</div></section></div>`}
+function overviewPage(){const s=state.summary.counts;return`<div class="grid stats"><div class="card stat"><span class="stat-label">إجمالي الدفعات</span><strong class="stat-value">${s.batches||0}</strong><span class="stat-icon">${icons.layers}</span></div><div class="card stat"><span class="stat-label">الألبومات</span><strong class="stat-value">${s.albums||0}</strong><span class="stat-icon">${icons.grid}</span></div><div class="card stat"><span class="stat-label">الصور الموثقة</span><strong class="stat-value">${s.photos||0}</strong><span class="stat-icon">${icons.image}</span></div><div class="card stat"><span class="stat-label">حجم التخزين</span><strong class="stat-value stat-storage" id="overviewStorage">${storageValue(s.storage_bytes)}</strong><span class="stat-icon">${icons.upload}</span></div></div><div class="split" style="margin-top:22px"><section class="card"><div class="section-head" style="padding:0 20px"><div><h2>آخر الدفعات</h2><p>أحدث الدفعات في الأرشيف</p></div><button class="btn btn-soft btn-small" data-nav="batches">إدارة الدفعات</button></div><div>${state.summary.batches.map(batchRow).join('')||empty('لا توجد دفعات بعد')}</div></section><section class="card"><div class="section-head" style="padding:0 20px"><div><h2>آخر العمليات</h2><p>سجل النشاطات الإدارية</p></div></div><div>${state.summary.audit.slice(0,7).map(a=>`<div class="batch-row"><div class="row-copy"><strong>${esc(actionLabel(a.action))}</strong><small>${esc(entityLabel(a.entity_type))} · ${esc(a.name||a.username||'النظام')}</small></div><small class="muted">${fmtDate(a.created_at)}</small></div>`).join('')||empty('لا توجد عمليات بعد')}</div></section></div>`}
 const entityLabel=type=>({session:'جلسة',batch:'دفعة',album:'ألبوم',student:'اسم طالب',photo:'صورة',image:'ملف صورة',user:'حساب'})[type]||type;
 function actionLabel(a){return({create:'إضافة',update:'تعديل',delete:'حذف',upload:'رفع',login:'تسجيل دخول'})[a]||a}
 function empty(t){return`<div class="empty">${esc(t)}</div>`}
-function batchRow(b){const albums=b.albums||[],photos=albums.reduce((n,a)=>n+(a.photos||[]).length,0);return`<div class="batch-row"><div class="batch-main"><div class="year-chip">${esc(b.year)}</div><div><strong>${esc(b.title)}</strong><small>${albums.length} ألبومات · ${photos} صور · ${b.published?'<span class="badge badge-green">منشورة</span>':'<span class="badge badge-gray">مسودة</span>'}</small></div></div><div class="batch-actions"><button class="btn btn-soft btn-small" data-edit-batch="${b.id}">${icons.edit} تعديل</button><button class="btn btn-soft btn-small" data-open-batch="${b.id}">التفاصيل</button>${state.user.role==='admin'?`<button class="btn btn-danger btn-small" data-delete-batch="${b.id}">حذف</button>`:''}</div></div>`}
+function batchRow(b){const albums=b.albums||[],photos=b.photo_count??albums.reduce((n,a)=>n+(a.photos||[]).length,0);return`<div class="batch-row"><div class="batch-main"><div class="year-chip">${esc(b.year)}</div><div><strong>${esc(b.title)}</strong><small>${b.album_count??albums.length} ألبومات · ${photos} صور · ${b.published?'<span class="badge badge-green">منشورة</span>':'<span class="badge badge-gray">مسودة</span>'}</small></div></div><div class="batch-actions"><button class="btn btn-soft btn-small" data-edit-batch="${b.id}">${icons.edit} تعديل</button><button class="btn btn-soft btn-small" data-open-batch="${b.id}">التفاصيل</button>${state.user.role==='admin'?`<button class="btn btn-danger btn-small" data-delete-batch="${b.id}">حذف</button>`:''}</div></div>`}
 function batchesPage() {
   if (state.selectedBatch) return batchDetails(state.selectedBatch);
   return `<div class="section-head"><div><h2>الدفعات والألبومات</h2><p>تحكم كامل بالمحتوى المنشور والمسودات والأسماء.</p></div>
@@ -174,7 +247,7 @@ function mediaCard(file, managed = false) {
   </article>`;
 }
 function usersPage() {
-  const users = state.data.users || [];
+  const users = state.users;
   return `<div class="section-head"><div><h2>المستخدمون والصلاحيات</h2><p>إدارة المديرين والمشرفين وحالة الحساب.</p></div>
     <button class="btn btn-primary" data-new-user>${icons.plus} إضافة مستخدم</button></div>
     <section class="card table-wrap" tabindex="0" role="region" aria-label="جدول المستخدمين"><table class="table">
@@ -308,35 +381,69 @@ async function replaceMedia(input) {
 function render() {
   root.innerHTML = layout();
   bind();
-  if (state.view === 'media') {
+  if (state.view === 'media' && state.data) {
     bindUploads();
     bindMediaControls();
   }
   root.dispatchEvent(new Event('admin:render'));
+  enhanceAdmin();
+  if (state.view === 'overview' && state.summary) void loadStorage(state.summary);
 }
-function showView(view, batch = null) {
+async function showView(view, batch = null) {
+  const session = state;
+  const { key } = viewSources[view];
   state.view = view;
   state.selectedBatch = batch;
+  state.viewError = '';
   render();
   window.scrollTo(0, 0);
-  root.querySelector(batch ? '#batch-details-title' : '.topbar-title h1')?.focus({ preventScroll: true });
+  (root.querySelector('#batch-details-title') || root.querySelector('.topbar-title h1')).focus({ preventScroll: true });
+  if (state[key]) return;
+  try {
+    if (await loadView(view) && state.view === view) {
+      render();
+      const heading = root.querySelector('#batch-details-title') || root.querySelector('.topbar-title h1');
+      heading.focus({ preventScroll: true });
+    }
+  } catch (error) {
+    if (state !== session || state.view !== view) return;
+    if (error.status === 403 && view === 'users') {
+      invalidate('summary');
+      await showView('overview');
+      toast(error.message, 'error');
+      return;
+    }
+    state.viewError = error.message;
+    render();
+  }
 }
 function bind() {
   const click = (selector, handler) => root.querySelectorAll(selector).forEach(button => {
     button.onclick = () => handler(button);
   });
-  const batches = state.data.batches;
-  const findBatch = id => batches.find(batch => batch.id === Number(id));
+  const batches = state.data?.batches || [];
+  const findBatch = id => state.data?.batches.find(batch => batch.id === Number(id));
   const findAlbum = id => batches.flatMap(batch => batch.albums || []).find(album => album.id === Number(id));
   const findStudent = id => batches.flatMap(batch => batch.students || []).find(student => student.id === Number(id));
-  const findUser = id => (state.data.users || []).find(user => user.id === Number(id));
+  const findUser = id => state.users?.find(user => user.id === Number(id));
   bindSidebar();
   click('[data-nav]', button => showView(button.dataset.nav));
-  click('#refreshBtn, [data-refresh-media]', refresh);
+  click('#refreshBtn, [data-refresh-media], [data-retry-view]', refresh);
   click('#logoutBtn, #logoutSettings', logout);
   click('[data-new-batch]', () => openBatchModal());
   click('[data-open-batch]', button => showView('batches', Number(button.dataset.openBatch)));
-  click('[data-edit-batch]', button => openBatchModal(findBatch(button.dataset.editBatch)));
+  click('[data-edit-batch]', button => {
+    const id = button.dataset.editBatch;
+    const batch = findBatch(id);
+    if (batch) return openBatchModal(batch);
+    const view = state.view;
+    return runAction(button, async () => {
+      if (!await loadView('batches') || view !== state.view) return;
+      const loaded = findBatch(id);
+      if (!loaded) throw Error('الدفعة غير موجودة');
+      openBatchModal(loaded);
+    });
+  });
   click('[data-delete-batch]', button => deleteEntity(button, '/api/admin/batches/' + button.dataset.deleteBatch, {}, 'الدفعة وكل ألبوماتها وأسماء طلبتها'));
   click('[data-new-album]', button => openAlbumModal(button.dataset.newAlbum));
   click('[data-edit-album]', button => openAlbumModal(null, findAlbum(button.dataset.editAlbum)));
@@ -358,7 +465,7 @@ function bind() {
   });
   click('[data-new-user]', () => openUserModal());
   click('[data-edit-user]', button => openUserModal(findUser(button.dataset.editUser)));
-  click('[data-delete-user]', button => deleteEntity(button, '/api/admin/users', { id: button.dataset.deleteUser }, 'الحساب'));
+  click('[data-delete-user]', button => deleteEntity(button, '/api/admin/users', { id: button.dataset.deleteUser }, 'الحساب', 'users'));
   click('[data-toggle-user]', toggleUser);
   click('#newDevice', createDevice);
   click('[data-revoke-device]', revokeDevice);
@@ -440,13 +547,40 @@ async function changeMediaPage(button, cursor) {
 }
 function refresh(button) {
   return runAction(button, async () => {
-    if (await loadAdminData()) toast('تم تحديث البيانات', 'success');
+    const view = state.view;
+    try {
+      if (await loadView(view) && state.view === view) {
+        if (button.id === 'refreshBtn') {
+          for (const key of ['summary', 'data', 'users', 'devices']) {
+            if (key !== viewSources[view].key) invalidate(key);
+          }
+        }
+        state.viewError = '';
+        render();
+        toast('تم تحديث البيانات', 'success');
+      }
+    } catch (error) {
+      if (error.status === 403 && view === 'users' && state.view === view) {
+        invalidate('users');
+        invalidate('summary');
+        await showView('overview');
+      }
+      throw error;
+    }
   });
 }
-async function updateAfterChange(message) {
+async function updateAfterChange(message, changed = 'data') {
   const session = state;
-  try { if (await loadAdminData()) toast(message, 'success'); }
-  catch (error) {
+  const view = state.view;
+  const key = viewSources[view].key;
+  if (changed !== key) invalidate(changed);
+  if (key !== 'summary') invalidate('summary');
+  try {
+    if (key === changed || key === 'summary') {
+      if (await loadView(view) && state.view === view) render();
+    }
+    if (state === session) toast(message, 'success');
+  } catch {
     if (state === session) toast(message + '، وتعذّر تحديث العرض. اضغط تحديث.', 'error');
   }
 }
@@ -457,11 +591,11 @@ function logout(button) {
     document.getElementById('loginUsername').focus();
   });
 }
-function deleteEntity(button, url, body, label) {
+function deleteEntity(button, url, body, label, changed = 'data') {
   if (!confirm(`هل تريد حذف ${label}؟`)) return;
   return runAction(button, async () => {
     await sendJSON(url, 'DELETE', body);
-    await updateAfterChange(`تم حذف ${label}`);
+    await updateAfterChange(`تم حذف ${label}`, changed);
   });
 }
 function modal(title, body) {
@@ -490,7 +624,7 @@ function modal(title, body) {
   dialog.showModal();
   return dialog;
 }
-function bindEntityForm(dialog, save, message) {
+function bindEntityForm(dialog, save, message, { pending = 'جارٍ حفظ البيانات…', onSaved } = {}) {
   const form = dialog.querySelector('form');
   const close = dialog.querySelector('#closeModal');
   const feedback = document.createElement('p');
@@ -500,26 +634,27 @@ function bindEntityForm(dialog, save, message) {
   form.insertBefore(feedback, form.querySelector('.admin-submit'));
   form.onsubmit = async event => {
     event.preventDefault();
-    if (form.hasAttribute('aria-busy')) return;
+    if (form.hasAttribute('data-submitting')) return;
     feedback.hidden = true;
     const fields = new FormData(form);
     const data = Object.fromEntries(fields);
     if (form.elements.published) data.published = form.elements.published.checked;
-    setFormBusy(form, true);
+    setFormBusy(form, pending);
     close.disabled = true;
     const session = state;
     try {
-      await save(data, fields);
+      const result = await save(data, fields);
       if (state !== session) return;
-      dialog.close();
-      await updateAfterChange(message);
+      if (onSaved) await onSaved(message, result);
+      else await updateAfterChange(message);
+      if (dialog.open) dialog.close();
     } catch (error) {
       if (!dialog.open) return;
       feedback.textContent = error.message;
       feedback.hidden = false;
       feedback.scrollIntoView({ block: 'nearest' });
     } finally {
-      setFormBusy(form, false);
+      setFormBusy(form);
       close.disabled = false;
     }
   };
@@ -551,22 +686,42 @@ function openStudentModal(batchId,s){const m=modal(s?'تعديل اسم':'إضا
   bindEntityForm(m, data => sendJSON('/api/admin/students', s ? 'PATCH' : 'POST', s ? { ...data, id: s.id } : data), 'تم حفظ الاسم');
 }
 function openUserModal(u){const editing=Boolean(u);const m=modal(editing?'تعديل المستخدم':'إضافة مستخدم جديد',`<form id="entityForm" class="form-grid"><div class="field span-2"><label>الاسم<span class="hint">الاسم الظاهر داخل لوحة الإدارة.</span></label><input class="input" name="name" required value="${esc(u?.name||'')}"></div><div class="field"><label>اسم المستخدم<span class="hint">أحرف إنجليزية أو أرقام أو _ أو -، من 3 إلى 32 رمزًا.</span></label><input class="input" name="username" pattern="[a-zA-Z0-9_\\-]{3,32}" required placeholder="مثال: supervisor1" value="${esc(u?.username||'')}" ${editing?'disabled':''}></div><div class="field"><label>الدور<span class="hint">المدير يملك صلاحيات الإدارة الكاملة.</span></label><select class="select" name="role"><option value="editor" ${u?.role==='editor'?'selected':''}>مشرف</option><option value="admin" ${u?.role==='admin'?'selected':''}>مدير</option></select></div><div class="field span-2"><label>كلمة المرور ${editing?'الجديدة (اختياري)':''}<span class="hint">12 رمزًا على الأقل، واستخدم كلمة قوية.</span></label><input class="input" name="password" type="password" autocomplete="new-password" minlength="12" ${editing?'':'required'} placeholder="أدخل كلمة المرور"><small class="muted">12 رمزًا على الأقل</small></div>${submitButton(editing?'حفظ التعديلات':'إنشاء الحساب')}</form>`);
-  bindEntityForm(m, data => sendJSON('/api/admin/users', editing ? 'PATCH' : 'POST', editing ? { ...data, id: u.id } : data), editing ? 'تم تعديل الحساب' : 'تم إنشاء الحساب');
+  bindEntityForm(m, data => sendJSON('/api/admin/users', editing ? 'PATCH' : 'POST', editing ? { ...data, id: u.id } : data),
+    editing ? 'تم تعديل الحساب' : 'تم إنشاء الحساب', {
+      pending: editing ? 'جارٍ حفظ التعديلات…' : 'جارٍ إنشاء الحساب…',
+      onSaved: editing ? message => updateAfterChange(message, 'users') : addCreatedUser
+    });
+}
+function addCreatedUser(message, { user }) {
+  invalidate('summary');
+  if (state.users && user && !state.users.some(item => item.id === user.id)) {
+    state.requests.users = (state.requests.users || 0) + 1;
+    state.users = [...state.users, user].sort((a, b) => a.id - b.id);
+    if (state.view === 'users') render();
+  }
+  toast(message, 'success');
 }
 function toggleUser(button) {
   return runAction(button, async () => {
     await sendJSON('/api/admin/users', 'PATCH', { id: button.dataset.toggleUser, active: button.dataset.active === '1' });
-    await updateAfterChange('تم تحديث حالة الحساب');
+    await updateAfterChange('تم تحديث حالة الحساب', 'users');
   });
 }
+let qrLibrary;
 function createDevice(button) {
   return runAction(button, async () => {
-    if (!window.QRCode) throw Error('تعذّر تحميل مولد الباركود');
     const session = state;
+    if (!window.QRCode) {
+      qrLibrary ||= loadScript('/assets/qr.js').catch(error => { qrLibrary = null; throw error; });
+      await qrLibrary;
+      if (!window.QRCode) throw Error('تعذّر تحميل مولد الباركود');
+    }
+    if (state !== session) return;
     const device = await sendJSON('/api/auth/device', 'POST', { label: 'جهاز موثوق' });
     if (state !== session) return;
-    state.devices = await api('/api/auth/device');
+    const devices = await api('/api/auth/device');
     if (state !== session) return;
+    state.devices = devices;
     render();
     document.getElementById('newDevice')?.focus({ preventScroll: true });
     const dialog = modal('باركود الدخول السريع', `<div class="device-qr">
@@ -586,13 +741,13 @@ function revokeDevice(button) {
   if (!confirm('هل تريد إلغاء الدخول السريع لهذا الجهاز؟')) return;
   return runAction(button, async () => {
     await sendJSON('/api/auth/device', 'DELETE', { id: button.dataset.revokeDevice });
-    await updateAfterChange('تم إلغاء الجهاز');
+    await updateAfterChange('تم إلغاء الجهاز', 'devices');
   });
 }
 function drawUploads(session) {
   if (state !== session || state.view !== 'media') return;
   const list = document.getElementById('uploadList');
-  list.innerHTML = session.uploadQueue.map(item => `<div class="upload-item">
+  list.innerHTML = session.uploadQueue.map(item => `<div class="upload-item" ${item.state === 'uploading' ? 'data-uploading' : ''}>
     <div><div class="file-name" title="${esc(item.file.name)}"><bdi>${esc(item.file.name)}</bdi></div>
       <div class="progress" role="progressbar" aria-label="رفع ${esc(item.file.name)}" aria-valuenow="${item.progress}"><span style="width:${item.progress}%"></span></div></div>
     <span class="status">${esc(item.message)}</span>
@@ -675,7 +830,9 @@ function bindUploads() {
     if (state !== session) return;
     const failed = jobs.filter(item => item.state === 'failed').length;
     if (failed) {
-      try { await loadAdminData(); } catch { /* per-file results remain visible */ }
+      invalidate('summary');
+      try { if (await loadView('media') && state.view === 'media') render(); }
+      catch { /* per-file results remain visible */ }
       if (state === session) toast(`تعذّر رفع ${failed} ملف. يمكنك إعادة المحاولة.`, 'error');
     } else await updateAfterChange('اكتمل رفع الصور');
   };
@@ -708,17 +865,19 @@ function uploadOne(item,{album,published,prefix},draw){
     xhr.send(form);
   });
 }
-async function initialize(){
-  const url=new URL(location.href);
-  const token=new URLSearchParams(url.hash.slice(1)).get('device')||url.searchParams.get('device');
-  if(token){
-    history.replaceState(null,'','/admin');
-    try{
-      await api('/api/auth/device',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({token})});
-    }catch(error){login(error.message);return}
+async function initialize() {
+  const url = new URL(location.href);
+  const token = new URLSearchParams(url.hash.slice(1)).get('device') || url.searchParams.get('device');
+  try {
+    if (token) {
+      document.getElementById('startup-status').textContent = 'جارٍ تسجيل الدخول السريع…';
+      history.replaceState(null, '', '/admin');
+      await sendJSON('/api/auth/device', 'PUT', { token });
+    }
+    if (await loadView('overview')) render();
+  } catch (error) {
+    endSession(error.status === 401 ? '' : error.message);
   }
-  try{state.user=await api('/api/auth/me');await boot()}
-  catch(error){login(error.status===401?'':error.message)}
 }
 initialize();
 </script>
